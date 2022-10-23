@@ -26,6 +26,12 @@ let package = Package(
       name: "Clocks",
       dependencies: [
         .product(name: "XCTestDynamicOverlay", package: "xctest-dynamic-overlay")
+      ],
+      swiftSettings: [
+        .unsafeFlags([
+          "-Xfrontend", "-warn-concurrency",
+          "-Xfrontend", "-enable-actor-data-race-checks",
+        ])
       ]
     ),
     .testTarget(
@@ -33,18 +39,13 @@ let package = Package(
       dependencies: [
         "Clocks",
         .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
+      ],
+      swiftSettings: [
+        .unsafeFlags([
+          "-Xfrontend", "-warn-concurrency",
+          "-Xfrontend", "-enable-actor-data-race-checks",
+        ])
       ]
     ),
   ]
 )
-
-//for target in package.targets {
-//  target.swiftSettings = target.swiftSettings ?? []
-//  target.swiftSettings?.append(
-//    .unsafeFlags([
-//      "-Xfrontend", "-warn-concurrency",
-//      "-Xfrontend", "-enable-actor-data-race-checks",
-//      "-enable-library-evolution",
-//    ])
-//  )
-//}
