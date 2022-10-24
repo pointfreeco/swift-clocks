@@ -223,7 +223,7 @@ struct Feature_Previews: PreviewProvider {
 
 A clock that causes an XCTest failure when any of its endpoints are invoked.
 
-This test is useful when a clock dependency must be provided to test a feature, but you don't
+This clock is useful when a clock dependency must be provided to test a feature, but you don't
 actually expect the clock to be used in the particular execution flow you are exercising.
 
 For example, consider the following model that encapsulates the behavior of being able to increment
