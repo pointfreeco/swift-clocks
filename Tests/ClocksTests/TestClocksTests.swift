@@ -3,7 +3,6 @@ import Clocks
 import XCTest
 
 @available(iOS 16, macOS 13, tvOS 16, watchOS 9, *)
-@MainActor
 final class TestClockTests: XCTestCase, @unchecked Sendable {
   let clock = TestClock()
 
@@ -64,6 +63,7 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
   }
 
   #if DEBUG && canImport(Darwin)
+  @MainActor
     func testRunWithTimeout() async throws {
       XCTExpectFailure {
         $0.compactDescription == """

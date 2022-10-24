@@ -2,7 +2,6 @@ import Clocks
 import XCTest
 
 @available(iOS 16, macOS 13, tvOS 16, watchOS 9, *)
-@MainActor
 final class ShimTests: XCTestCase {
   func testClockSleepFor() async {
     let testClock = TestClock()
