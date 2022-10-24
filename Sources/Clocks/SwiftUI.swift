@@ -1,4 +1,4 @@
-#if canImport(SwiftUI) && (canImport(RoomPlan) || (!canImport(Darwin) && swift(>=5.7)))
+#if swift(>=5.7) && (canImport(RegexBuilder) || !os(macOS)) && canImport(SwiftUI)
   import SwiftUI
 
   @available(macOS 13, iOS 16, watchOS 9, tvOS 16, *)

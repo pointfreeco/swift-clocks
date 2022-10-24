@@ -1,4 +1,4 @@
-#if canImport(RoomPlan) || (!canImport(Darwin) && swift(>=5.7))
+#if swift(>=5.7) && (canImport(RegexBuilder) || !os(macOS))
   import Foundation
   import XCTestDynamicOverlay
 
