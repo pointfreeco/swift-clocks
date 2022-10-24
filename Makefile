@@ -4,7 +4,7 @@ PLATFORM = iOS Simulator,name=iPhone 13 Pro
 test:
 	xcodebuild test \
 		-configuration $(CONFIG) \
-		-scheme swift-clocks \
+		-scheme Clocks \
 		-destination platform="$(PLATFORM)"
 
 test-linux:

@@ -1,0 +1,12 @@
+blank_issues_enabled: false
+
+contact_links:
+  - name: Discussion
+    url: https://github.com/pointfreeco/swift-clocks/discussions
+    about: Library Q&A, ideas, and more
+  - name: Documentation
+    url: https://pointfreeco.github.io/swift-clocks/main/documentation/clocks/
+    about: Read the documentation
+  - name: Videos
+    url: https://www.pointfree.co/collections/concurrency/clocks
+    about: Watch videos to get a behind-the-scenes look at how this library was motivated and built
