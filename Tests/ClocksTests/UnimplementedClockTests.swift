@@ -1,4 +1,4 @@
-#if DEBUG && !canImport(Darwin)
+#if DEBUG && canImport(Darwin)
   import AsyncAlgorithms
   import Clocks
   import XCTest
