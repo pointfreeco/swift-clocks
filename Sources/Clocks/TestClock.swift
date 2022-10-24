@@ -88,8 +88,11 @@
     public private(set) var now: Instant
 
     private let lock = NSRecursiveLock()
-    private var suspensions:
-      [(id: UUID, deadline: Instant, continuation: AsyncStream<Never>.Continuation)] = []
+    private var suspensions: [(
+      id: UUID,
+      deadline: Instant,
+      continuation: AsyncThrowingStream<Never, Error>.Continuation
+    )] = []
 
     public init(now: Instant = .init()) {
       self.now = .init()
@@ -99,18 +102,18 @@
       try Task.checkCancellation()
       let id = UUID()
       do {
-        let stream: AsyncStream<Never>? = self.lock.sync {
+        let stream: AsyncThrowingStream<Never, Error>? = self.lock.sync {
           guard deadline >= self.now
           else {
             return nil
           }
-          return AsyncStream<Never> { continuation in
+          return AsyncThrowingStream<Never, Error> { continuation in
             self.suspensions.append((id: id, deadline: deadline, continuation: continuation))
           }
         }
         guard let stream = stream
         else { return }
-        for await _ in stream {}
+        for try await _ in stream {}
         try Task.checkCancellation()
       } catch is CancellationError {
         self.lock.sync { self.suspensions.removeAll(where: { $0.id == id }) }
@@ -184,9 +187,11 @@
         }()
 
         if `return` {
+          await Task.megaYield()
           return
         }
       }
+      await Task.megaYield()
     }
 
     /// Runs the clock until it has no scheduled sleeps left.
@@ -225,6 +230,9 @@
         try await withThrowingTaskGroup(of: Void.self) { group in
           group.addTask {
             try await Task.sleep(until: .now.advanced(by: duration), clock: .continuous)
+            for suspension in self.suspensions {
+              suspension.continuation.finish(throwing: CancellationError())
+            }
             throw CancellationError()
           }
           group.addTask {

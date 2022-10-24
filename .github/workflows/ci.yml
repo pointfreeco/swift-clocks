@@ -27,4 +27,16 @@ jobs:
       - name: Run ${{ matrix.config }} tests
         run: CONFIG=${{ matrix.config }} make test
 
-# TODO: test on linux
+  ubuntu_tests:
+    strategy:
+      matrix:
+        os: [ubuntu-18.04, ubuntu-20.04]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build
+        run: swift build
+      - name: Run tests
+        run: swift test

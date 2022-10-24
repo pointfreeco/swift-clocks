@@ -2,7 +2,6 @@ import Clocks
 import XCTest
 
 @available(iOS 16, macOS 13, tvOS 16, watchOS 9, *)
-@MainActor
 final class ImmediateClockTests: XCTestCase {
   func testTimer() async throws {
     let clock = ImmediateClock()
@@ -30,7 +29,7 @@ final class ImmediateClockTests: XCTestCase {
   func testCooperativeCancellation() async throws {
     let clock = ImmediateClock()
     let task = Task {
-      try? await Task.sleep(nanoseconds: NSEC_PER_SEC / 3)
+      try? await Task.sleep(nanoseconds: 1_000_000_000 / 3)
       try await clock.sleep(for: .seconds(1))
     }
     task.cancel()

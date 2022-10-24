@@ -1,11 +1,11 @@
-#if DEBUG
+#if DEBUG && canImport(Darwin)
   import AsyncAlgorithms
   import Clocks
   import XCTest
 
   @available(iOS 16, macOS 13, tvOS 16, watchOS 9, *)
-  @MainActor
   final class UnimplementedClockTests: XCTestCase {
+    @MainActor
     func testUnimplementedClock() async throws {
       XCTExpectFailure {
         [
@@ -19,6 +19,7 @@
       try await clock.sleep(for: .seconds(1))
     }
 
+    @MainActor
     func testUnimplementedClock_WithName() async throws {
       XCTExpectFailure {
         [
@@ -32,6 +33,7 @@
       try await clock.sleep(for: .seconds(1))
     }
 
+    @MainActor
     func testNow() async throws {
       XCTExpectFailure {
         [
@@ -46,6 +48,7 @@
       XCTAssertEqual(clock.now.offset, .seconds(5))
     }
 
+    @MainActor
     func testCooperativeCancellation() async throws {
       XCTExpectFailure {
         [
@@ -57,7 +60,7 @@
 
       let clock = UnimplementedClock()
       let task = Task {
-        try? await Task.sleep(nanoseconds: NSEC_PER_SEC / 3)
+        try? await Task.sleep(nanoseconds: 1_000_000_000 / 3)
         try await clock.sleep(for: .seconds(1))
       }
       task.cancel()
