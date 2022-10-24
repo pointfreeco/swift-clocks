@@ -1,4 +1,4 @@
-#if DEBUG
+#if DEBUG && !canImport(Darwin)
   import AsyncAlgorithms
   import Clocks
   import XCTest
@@ -57,7 +57,7 @@
 
       let clock = UnimplementedClock()
       let task = Task {
-        try? await Task.sleep(nanoseconds: NSEC_PER_SEC / 3)
+        try? await Task.sleep(nanoseconds: 1_000_000_000 / 3)
         try await clock.sleep(for: .seconds(1))
       }
       task.cancel()
