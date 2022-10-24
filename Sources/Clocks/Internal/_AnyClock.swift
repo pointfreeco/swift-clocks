@@ -1,4 +1,4 @@
-#if canImport(RoomPlan) || (!canImport(Darwin) && swift(>=5.7))
+#if swift(>=5.7) && (canImport(RegexBuilder) || !os(macOS))
   /// Internal use only. Not meant to be used outside the library.
   @available(iOS 16, macOS 13, tvOS 16, watchOS 9, *)
   public struct _AnyClock<Duration: DurationProtocol & Hashable>: Clock {

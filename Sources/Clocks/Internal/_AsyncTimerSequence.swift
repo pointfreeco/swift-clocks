@@ -1,4 +1,4 @@
-#if canImport(RoomPlan) || (!canImport(Darwin) && swift(>=5.7))
+#if swift(>=5.7) && (canImport(RegexBuilder) || !os(macOS))
   //===----------------------------------------------------------------------===//
   //
   // This source file is part of the Swift Async Algorithms open source project

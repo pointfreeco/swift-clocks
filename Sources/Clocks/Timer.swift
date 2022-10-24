@@ -1,4 +1,4 @@
-#if canImport(RoomPlan) || (!canImport(Darwin) && swift(>=5.7))
+#if swift(>=5.7) && (canImport(RegexBuilder) || !os(macOS))
   @available(iOS 16, macOS 13, tvOS 16, watchOS 9, *)
   extension Clock where Duration: Hashable {
     /// Creates an async sequence that emits the clock's `now` value on an interval.
