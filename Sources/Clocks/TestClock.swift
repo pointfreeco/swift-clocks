@@ -187,9 +187,11 @@
         }()
 
         if `return` {
+          await Task.megaYield()
           return
         }
       }
+      await Task.megaYield()
     }
 
     /// Runs the clock until it has no scheduled sleeps left.
