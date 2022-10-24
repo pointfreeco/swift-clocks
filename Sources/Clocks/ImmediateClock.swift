@@ -1,4 +1,4 @@
-#if swift(>=5.7) && (canImport(RegexBuilder) || !os(macOS))
+#if swift(>=5.7) && (canImport(RegexBuilder) || !os(macOS) && !targetEnvironment(macCatalyst))
   import Foundation
 
   /// A clock that does not suspend when sleeping.

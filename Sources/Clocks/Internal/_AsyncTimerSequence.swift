@@ -1,4 +1,4 @@
-#if swift(>=5.7) && (canImport(RegexBuilder) || !os(macOS))
+#if swift(>=5.7) && (canImport(RegexBuilder) || !os(macOS) && !targetEnvironment(macCatalyst))
   //===----------------------------------------------------------------------===//
   //
   // This source file is part of the Swift Async Algorithms open source project
