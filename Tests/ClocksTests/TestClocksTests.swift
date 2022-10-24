@@ -63,7 +63,7 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
   }
 
   #if DEBUG && canImport(Darwin)
-  @MainActor
+    @MainActor
     func testRunWithTimeout() async throws {
       XCTExpectFailure {
         $0.compactDescription == """

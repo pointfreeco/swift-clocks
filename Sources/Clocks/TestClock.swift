@@ -88,11 +88,12 @@
     public private(set) var now: Instant
 
     private let lock = NSRecursiveLock()
-    private var suspensions: [(
-      id: UUID,
-      deadline: Instant,
-      continuation: AsyncThrowingStream<Never, Error>.Continuation
-    )] = []
+    private var suspensions:
+      [(
+        id: UUID,
+        deadline: Instant,
+        continuation: AsyncThrowingStream<Never, Error>.Continuation
+      )] = []
 
     public init(now: Instant = .init()) {
       self.now = .init()
