@@ -109,7 +109,12 @@
             return nil
           }
           return AsyncThrowingStream<Never, Error> { continuation in
-            self.suspensions.append((id: id, deadline: deadline, continuation: continuation))
+            let newElement = (id: id, deadline: deadline, continuation: continuation)
+            if let insertionIndex = self.suspensions.firstIndex(where: { $0.deadline > deadline }) {
+              self.suspensions.insert(newElement, at: insertionIndex)
+            } else {
+              self.suspensions.append(newElement)
+            }
           }
         }
         guard let stream = stream
@@ -169,7 +174,6 @@
         await Task.megaYield()
         let `return` = {
           self.lock.lock()
-          self.suspensions.sort { $0.deadline < $1.deadline }
 
           guard
             let next = self.suspensions.first,
