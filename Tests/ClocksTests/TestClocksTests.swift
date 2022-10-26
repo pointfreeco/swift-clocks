@@ -200,7 +200,7 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
           return 2
         }
         group.addTask {
-          try await Task.sleep(for: .milliseconds(500))
+          try await Task.sleep(nanoseconds: 500 * NSEC_PER_MSEC)
           try await self.clock.sleep(for: .seconds(1))
           return 1
         }
@@ -208,7 +208,7 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
       }
     }
 
-    try await Task.sleep(for: .seconds(1))
+    try await Task.sleep(nanoseconds: NSEC_PER_SEC)
     await self.clock.run()
     let values = try await task.value
 
