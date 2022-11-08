@@ -12,6 +12,7 @@
   * [`ImmediateClock`](#immediateclock)
   * [`UnimplementedClock`](#unimplementedclock)
   * [Timers](#timers)
+  * [`AnyClock`](#anyclock)
 * [Documentation](#documentation)
 * [License](#License)
 
@@ -41,10 +42,11 @@ wait for real world time to pass to see how your feature works.
 This library provides new `Clock` conformances that allow you to turn any time-based asynchronous
 code into something that is easier to test and debug:
 
-* [TestClock](#TestClock)
-* [ImmediateClock](#ImmediateClock)
-* [UnimplementedClock](#UnimplementedClock)
+* [`TestClock`](#TestClock)
+* [`ImmediateClock`](#ImmediateClock)
+* [`UnimplementedClock`](#UnimplementedClock)
 * [Timers](#Timers)
+* [`AnyClock`](#AnyClock)
 
 ### `TestClock`
 
@@ -335,6 +337,41 @@ func testTimer() async {
 
   model.stopTimerButtonTapped()
   await clock.run()
+}
+```
+
+### `AnyClock`
+
+A concrete version of `any Clock`.
+
+This type makes it possible to pass clock existentials to APIs that would otherwise prohibit it.
+
+For example, the [Async Algorithms](https://github.com/apple/swift-async-algorithms) package
+provides a number of APIs that take clocks, but due to limitations in Swift, they cannot take a
+clock existential of the form `any Clock`:
+
+```swift
+class Model: ObservableObject {
+  let clock: any Clock<Duration>
+  init(clock: any Clock<Duration>) {
+    self.clock = clock
+  }
+
+  func task() async {
+    // 🛑 Type 'any Clock<Duration>' cannot conform to 'Clock'
+    for await _ in stream.debounce(for: .seconds(1), clock: self.clock) {
+      // ...
+    }
+  }
+}
+```
+
+By using a concrete `AnyClock`, instead, we can work around this limitation:
+
+```swift
+// ✅
+for await _ in stream.debounce(for: .seconds(1), clock: AnyClock(self.clock)) {
+  // ...
 }
 ```
 

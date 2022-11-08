@@ -27,18 +27,9 @@
   /// By using a concrete `AnyClock`, instead, we can work around this limitation:
   ///
   /// ```swift
-  /// class Model: ObservableObject {
-  ///   let clock: any Clock<Duration>
-  ///   init(clock: any Clock<Duration>) {
-  ///     self.clock = clock
-  ///   }
-  ///
-  ///   func task() async {
-  ///     // ✅
-  ///     for await _ in stream.debounce(for: .seconds(1), clock: AnyClock(self.clock)) {
-  ///       // ...
-  ///     }
-  ///   }
+  /// // ✅
+  /// for await _ in stream.debounce(for: .seconds(1), clock: AnyClock(self.clock)) {
+  ///   // ...
   /// }
   /// ```
   @available(iOS 16, macOS 13, tvOS 16, watchOS 9, *)
