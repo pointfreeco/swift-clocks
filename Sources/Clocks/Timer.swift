@@ -5,8 +5,8 @@
     public func timer(
       interval: Self.Duration,
       tolerance: Self.Duration? = nil
-    ) -> _AsyncTimerSequence<_AnyClock<Duration>> {
-      .init(interval: interval, tolerance: tolerance, clock: _AnyClock(self))
+    ) -> _AsyncTimerSequence<AnyClock<Duration>> {
+      .init(interval: interval, tolerance: tolerance, clock: AnyClock(self))
     }
   }
 #endif
