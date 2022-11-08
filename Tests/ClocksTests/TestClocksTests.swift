@@ -191,4 +191,27 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
     XCTAssertEqual(self.clock.now.offset, .seconds(5))
     try await task.value
   }
+
+  func testRunSorting() async throws {
+    let task = Task {
+      try await withThrowingTaskGroup(of: Int.self, returning: [Int].self) { group in
+        group.addTask {
+          try await self.clock.sleep(for: .seconds(2))
+          return 2
+        }
+        group.addTask {
+          try await Task.sleep(nanoseconds: 500_000_000)
+          try await self.clock.sleep(for: .seconds(1))
+          return 1
+        }
+        return try await group.reduce(into: []) { $0.append($1) }
+      }
+    }
+
+    try await Task.sleep(nanoseconds: 1_000_000_000)
+    await self.clock.run()
+    let values = try await task.value
+
+    XCTAssertEqual(values, [1, 2])
+  }
 }
