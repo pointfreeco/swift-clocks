@@ -4,8 +4,8 @@
   /// This type provides a concrete alternative to `any Clock<Duration>` and makes it possible to
   /// pass clock existentials to APIs that would otherwise prohibit it.
   ///
-  /// For example the [Async Algorithms](https://github.com/apple/swift-async-algorithms) provides a
-  /// number of APIs that take clocks, but due to limitations in Swift, cannot take a clock
+  /// For example, the [Async Algorithms](https://github.com/apple/swift-async-algorithms) provides
+  /// a number of APIs that take clocks, but due to limitations in Swift, they cannot take a clock
   /// existential of the form `any Clock`:
   ///
   /// ```swift
@@ -14,9 +14,10 @@
   ///   init(clock: any Clock<Duration>) {
   ///     self.clock = clock
   ///   }
+  ///
   ///   func task() async {
   ///     // 🛑 Type 'any Clock<Duration>' cannot conform to 'Clock'
-  ///     for await _ in stream.debounce(for: .seconds(1), clock: self.clock) { // 🛑
+  ///     for await _ in stream.debounce(for: .seconds(1), clock: self.clock) {
   ///       // ...
   ///     }
   ///   }
@@ -27,12 +28,14 @@
   ///
   /// ```swift
   /// class Model: ObservableObject {
-  ///   let clock: AnyClock<Duration>
+  ///   let clock: any Clock<Duration>
   ///   init(clock: any Clock<Duration>) {
-  ///     self.clock = AnyClock(clock)
+  ///     self.clock = clock
   ///   }
+  ///
   ///   func task() async {
-  ///     for await _ in stream.debounce(for: .seconds(1), clock: self.clock) { // ✅
+  ///     // ✅
+  ///     for await _ in stream.debounce(for: .seconds(1), clock: AnyClock(self.clock)) {
   ///       // ...
   ///     }
   ///   }
