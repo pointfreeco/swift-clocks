@@ -5,6 +5,9 @@ import XCTest
 @available(iOS 16, macOS 13, tvOS 16, watchOS 9, *)
 final class AsyncAlgorithmsTests: XCTestCase, @unchecked Sendable {
   let clock = TestClock()
+  var erasedClock: AnyClock<Duration> {
+    AnyClock(self.clock)
+  }
 
   override func tearDown() async throws {
     try await super.tearDown()
@@ -12,7 +15,7 @@ final class AsyncAlgorithmsTests: XCTestCase, @unchecked Sendable {
   }
 
   func testTimer() async {
-    let timer = AsyncTimerSequence(interval: .seconds(1), clock: self.clock)
+    let timer = AsyncTimerSequence(interval: .seconds(1), clock: self.erasedClock)
       .prefix(10)
 
     let ticks = ActorIsolated(0)
@@ -44,7 +47,7 @@ final class AsyncAlgorithmsTests: XCTestCase, @unchecked Sendable {
 
     let ticks = ActorIsolated(0)
     let task = Task {
-      for await _ in stream.debounce(for: .seconds(1), clock: self.clock) {
+      for await _ in stream.debounce(for: .seconds(1), clock: self.erasedClock) {
         await ticks.withValue { $0 += 1 }
       }
     }
@@ -86,7 +89,7 @@ final class AsyncAlgorithmsTests: XCTestCase, @unchecked Sendable {
 
     let ticks = ActorIsolated(0)
     let task = Task {
-      for await _ in stream.throttle(for: .seconds(1), clock: self.clock) {
+      for await _ in stream.throttle(for: .seconds(1), clock: self.erasedClock) {
         await ticks.withValue { $0 += 1 }
       }
     }
