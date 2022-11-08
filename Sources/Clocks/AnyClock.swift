@@ -4,9 +4,9 @@
   /// This type provides a concrete alternative to `any Clock<Duration>` and makes it possible to
   /// pass clock existentials to APIs that would otherwise prohibit it.
   ///
-  /// For example, the [Async Algorithms](https://github.com/apple/swift-async-algorithms) provides
-  /// a number of APIs that take clocks, but due to limitations in Swift, they cannot take a clock
-  /// existential of the form `any Clock`:
+  /// For example, the [Async Algorithms](https://github.com/apple/swift-async-algorithms) package
+  /// provides a number of APIs that take clocks, but due to limitations in Swift, they cannot take
+  /// a clock existential of the form `any Clock`:
   ///
   /// ```swift
   /// class Model: ObservableObject {
