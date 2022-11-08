@@ -25,4 +25,8 @@ is easier to test and debug.
 - ``TestClock``
 - ``UnimplementedClock``
 
+### Concrete erasure
+
+- ``AnyClock``
+
 [swift-async-algorithms]: http://github.com/apple/swift-async-algorithms
