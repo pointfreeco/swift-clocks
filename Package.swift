@@ -4,6 +4,8 @@ import PackageDescription
 
 let package = Package(
   name: "swift-clocks",
+  // NB: Support earlier platforms so that depending libraries and applications can conditionally use the
+  //     library via availability checks against iOS 16+, etc.
   platforms: [
     .iOS(.v13),
     .macOS(.v10_15),
