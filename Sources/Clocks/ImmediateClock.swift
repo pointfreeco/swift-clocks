@@ -33,7 +33,7 @@
   ///
   /// This is currently using a real life clock by calling out to `Task.sleep(for:)`, which means
   /// every change you make to the styling and behavior of this feature you must wait for 5 real life
-  /// seconds to pass before you see the affect. This will severely hurt you ability to quickly
+  /// seconds to pass before you see the affect. This will severely hurt your ability to quickly
   /// iterate on the feature in an Xcode preview.
   ///
   /// The fix is to have your view hold onto a clock so that it can be controlled from the outside:
