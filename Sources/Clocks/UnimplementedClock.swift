@@ -66,7 +66,7 @@
   @available(iOS 16, macOS 13, tvOS 16, watchOS 9, *)
   public struct UnimplementedClock<Duration: DurationProtocol & Hashable>: Clock {
     public struct Instant: InstantProtocol {
-      let rawValue: AnyClock<Duration>.Instant
+      fileprivate let rawValue: AnyClock<Duration>.Instant
 
       public func advanced(by duration: Duration) -> Self {
         Self(rawValue: self.rawValue.advanced(by: duration))
