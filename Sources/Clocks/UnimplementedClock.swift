@@ -64,65 +64,60 @@
   /// failures. This will help us find the tests that should be updated to assert on the new behavior
   /// in the feature.
   @available(iOS 16, macOS 13, tvOS 16, watchOS 9, *)
-  public final class UnimplementedClock<Duration>: Clock, @unchecked Sendable
-  where
-    Duration: DurationProtocol,
-    Duration: Hashable
-  {
+  public struct UnimplementedClock<Duration: DurationProtocol & Hashable>: Clock {
     public struct Instant: InstantProtocol {
-      public var offset: Duration
-      public init(offset: Duration = .zero) {
-        self.offset = offset
-      }
+      fileprivate let rawValue: AnyClock<Duration>.Instant
 
       public func advanced(by duration: Duration) -> Self {
-        .init(offset: self.offset + duration)
+        Self(rawValue: self.rawValue.advanced(by: duration))
       }
 
       public func duration(to other: Self) -> Duration {
-        other.offset - self.offset
+        self.rawValue.duration(to: other.rawValue)
       }
 
       public static func < (lhs: Self, rhs: Self) -> Bool {
-        lhs.offset < rhs.offset
+        lhs.rawValue < rhs.rawValue
       }
+    }
+
+    private let base: AnyClock<Duration>
+    private let name: String
+
+    public init<C: Clock>(
+      _ base: C,
+      name: String = "\(C.self)"
+    ) where C.Duration == Duration {
+      self.base = AnyClock(base)
+      self.name = name
+    }
+
+    public init(
+      name: String = "Clock",
+      now: ImmediateClock<Duration>.Instant = .init()
+    ) {
+      self.init(ImmediateClock(now: now), name: name)
     }
 
     public var now: Instant {
       XCTFail("Unimplemented: \(self.name).now")
-      return self._now
+      return Instant(rawValue: self.base.now)
     }
-    public var _now = Instant()
+
     public var minimumResolution: Duration {
       XCTFail("Unimplemented: \(self.name).minimumResolution")
-      return .zero
-    }
-    /// The name of the clock.
-    ///
-    /// Printed to identify the clock in failure messages.
-    public let name: String
-
-    private let lock = NSRecursiveLock()
-
-    public init(
-      name: String = "Clock",
-      now: Instant = .init()
-    ) {
-      self.name = name
-      self._now = now
+      return self.base.minimumResolution
     }
 
-    public func sleep(until deadline: Instant, tolerance: Instant.Duration? = nil) async throws {
+    public func sleep(until deadline: Instant, tolerance: Duration?) async throws {
       XCTFail("Unimplemented: \(self.name).sleep")
-      try Task.checkCancellation()
-      self.lock.sync { self._now = deadline }
-      await Task.megaYield()
+      try await self.base.sleep(until: deadline.rawValue, tolerance: tolerance)
     }
   }
 
   @available(iOS 16, macOS 13, tvOS 16, watchOS 9, *)
   extension UnimplementedClock where Duration == Swift.Duration {
-    public convenience init(name: String = "Clock") {
+    public init(name: String = "Clock") {
       self.init(name: name, now: .init())
     }
   }
