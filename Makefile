@@ -1,11 +1,9 @@
 CONFIG = debug
-PLATFORM_IOS = iOS Simulator,name=iPhone 13 Pro
+PLATFORM_IOS = iOS Simulator,id=$(call udid_for,iPhone)
 PLATFORM_MACOS = macOS
 PLATFORM_MAC_CATALYST = macOS,variant=Mac Catalyst
-PLATFORM_TVOS = tvOS Simulator,name=Apple TV
-PLATFORM_WATCHOS = watchOS Simulator,name=Apple Watch Series 7 (45mm)
-
-CONFIG = debug
+PLATFORM_TVOS = tvOS Simulator,id=$(call udid_for,TV)
+PLATFORM_WATCHOS = watchOS Simulator,id=$(call udid_for,Watch)
 
 test-all: test build
 
@@ -29,13 +27,20 @@ test-linux:
 		--rm \
 		-v "$(PWD):$(PWD)" \
 		-w "$(PWD)" \
-		swift:5.3 \
+		swift:5.8 \
 		bash -c 'make test-swift'
 
 test-swift:
 	swift test \
 		--enable-test-discovery \
 		--parallel
+
+build-for-library-evolution:
+	swift build \
+		-c release \
+		--target Clocks \
+		-Xswiftc -emit-module-interface \
+		-Xswiftc -enable-library-evolution
 
 format:
 	swift format \
@@ -45,3 +50,7 @@ format:
 		./Package.swift ./Sources ./Tests
 
 .PHONY: format test
+
+define udid_for
+$(shell xcrun simctl list --json devices available $(1) | jq -r '.devices | to_entries | map(select(.value | add)) | sort_by(.key) | last.value | last.udid')
+endef
