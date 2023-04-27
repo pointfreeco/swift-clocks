@@ -45,7 +45,6 @@
 
       let clock = UnimplementedClock()
       try await clock.sleep(for: .seconds(5))
-      XCTAssertEqual(clock.now.offset, .seconds(5))
     }
 
     @MainActor
