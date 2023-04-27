@@ -36,4 +36,4 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Run tests
-        run: swift -c ${{ matrix.config }} test
+        run: swift test -c ${{ matrix.config }}
