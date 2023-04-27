@@ -11,7 +11,7 @@
   /// ```swift
   /// class Model: ObservableObject {
   ///   let clock: any Clock<Duration>
-  ///   init(clock: any Clock<Duration>) {
+  ///   init(clock: some Clock<Duration>) {
   ///     self.clock = clock
   ///   }
   ///
