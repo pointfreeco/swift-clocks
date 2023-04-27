@@ -19,7 +19,7 @@
   ///   let clock: any Clock<Duration>
   ///   var timerTask: Task<Void, Error>?
   ///
-  ///   init(clock: any Clock<Duration>) {
+  ///   init(clock: some Clock<Duration>) {
   ///     self.clock = clock
   ///   }
   ///   func incrementButtonTapped() {
