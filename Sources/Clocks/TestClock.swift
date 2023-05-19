@@ -96,7 +96,7 @@
       )] = []
 
     public init(now: Instant = .init()) {
-      self.now = .init()
+      self.now = now
     }
 
     public func sleep(until deadline: Instant, tolerance: Duration? = nil) async throws {
