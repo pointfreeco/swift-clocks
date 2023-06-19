@@ -19,15 +19,17 @@ let package = Package(
     )
   ],
   dependencies: [
-    .package(url: "https://github.com/pointfreeco/xctest-dynamic-overlay", from: "0.3.0"),
     .package(url: "https://github.com/apple/swift-async-algorithms", revision: "cf70e78"),
     .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.0.0"),
+    .package(path: "../swift-concurrency-extras"),
+    .package(url: "https://github.com/pointfreeco/xctest-dynamic-overlay", from: "0.8.0"),
   ],
   targets: [
     .target(
       name: "Clocks",
       dependencies: [
-        .product(name: "XCTestDynamicOverlay", package: "xctest-dynamic-overlay")
+        .product(name: "ConcurrencyExtras", package: "swift-concurrency-extras"),
+        .product(name: "XCTestDynamicOverlay", package: "xctest-dynamic-overlay"),
       ]
     ),
     .testTarget(
