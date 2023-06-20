@@ -1,4 +1,4 @@
-#if swift(>=5.7) && (canImport(RegexBuilder) || !os(macOS) && !targetEnvironment(macCatalyst))
+#if swift(>=5.7) && (canImport(RegexBuilder) || !os(macOS) && !targetEnvironment(macCatalyst)) && swift(<5.9)
   @available(iOS 16, macOS 13, tvOS 16, watchOS 9, *)
   extension Clock {
     /// Suspends for the given duration.
