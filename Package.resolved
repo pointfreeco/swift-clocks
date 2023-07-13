@@ -19,6 +19,15 @@
       }
     },
     {
+      "identity" : "swift-concurrency-extras",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/swift-concurrency-extras",
+      "state" : {
+        "branch" : "main",
+        "revision" : "54c807cb9a333aebdd13ab07e8dd5738701d8f2f"
+      }
+    },
+    {
       "identity" : "swift-docc-plugin",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-docc-plugin",
