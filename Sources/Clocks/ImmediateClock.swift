@@ -1,4 +1,5 @@
 #if swift(>=5.7) && (canImport(RegexBuilder) || !os(macOS) && !targetEnvironment(macCatalyst))
+  import ConcurrencyExtras
   import Foundation
 
   /// A clock that does not suspend when sleeping.
