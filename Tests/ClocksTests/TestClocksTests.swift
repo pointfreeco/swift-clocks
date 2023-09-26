@@ -26,6 +26,13 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
     XCTAssertEqual(checkIsFinished, true)
   }
 
+  func testSleepUntilExactlyNow() async throws {
+    let duration: Duration = .seconds(1)
+    let deadline = clock.now.advanced(by: duration)
+    await clock.advance(by: duration)
+    try await clock.sleep(until: deadline)
+  }
+
   func testAdvanceWithReentrantUnitsOfWork() async throws {
     let task = Task {
       var count = 0
