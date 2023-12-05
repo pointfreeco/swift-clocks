@@ -89,7 +89,7 @@ final class AsyncAlgorithmsTests: XCTestCase, @unchecked Sendable {
 
     let ticks = ActorIsolated(0)
     let task = Task {
-      for await _ in stream.throttle(for: .seconds(1), clock: self.erasedClock) {
+      for await _ in stream._throttle(for: .seconds(1), clock: self.erasedClock) {
         await ticks.withValue { $0 += 1 }
       }
     }
@@ -124,45 +124,5 @@ final class AsyncAlgorithmsTests: XCTestCase, @unchecked Sendable {
     await self.clock.run()
     await task.value
     XCTAssertEqual(actualTicks, 2)
-  }
-
-  func testSelect_First() async throws {
-    let task = Task {
-      await Task.select([
-        Task {
-          try await self.clock.sleep(for: .seconds(1))
-          return 1
-        },
-        Task {
-          try await self.clock.sleep(for: .seconds(2))
-          return 2
-        },
-      ])
-    }
-
-    await self.clock.advance(by: .seconds(2))
-
-    let winner = try await task.value.value
-    XCTAssertEqual(winner, 1)
-  }
-
-  func testSelect_Second() async throws {
-    let task = Task {
-      await Task.select([
-        Task {
-          try await self.clock.sleep(for: .seconds(2))
-          return 1
-        },
-        Task {
-          try await self.clock.sleep(for: .seconds(1))
-          return 2
-        },
-      ])
-    }
-
-    await self.clock.advance(by: .seconds(2))
-
-    let winner = try await task.value.value
-    XCTAssertEqual(winner, 2)
   }
 }
