@@ -34,7 +34,7 @@ let package = Package(
     .testTarget(
       name: "ClocksTests",
       dependencies: [
-        "Clocks",
+        "Clocks"
       ]
     ),
   ]

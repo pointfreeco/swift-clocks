@@ -99,8 +99,8 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
   #endif
 
   func testRunMultipleUnitsOfWork() async {
-		let timer = clock.timer(interval: .seconds(1))
-			.prefix(10)
+    let timer = clock.timer(interval: .seconds(1))
+      .prefix(10)
 
     let task = Task {
       var ticks = 0
