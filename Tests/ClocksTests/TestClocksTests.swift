@@ -1,4 +1,3 @@
-import AsyncAlgorithms
 import Clocks
 import XCTest
 
@@ -100,8 +99,8 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
   #endif
 
   func testRunMultipleUnitsOfWork() async {
-    let timer = AsyncTimerSequence(interval: .seconds(1), clock: self.clock)
-      .prefix(10)
+		let timer = clock.timer(interval: .seconds(1))
+			.prefix(10)
 
     let task = Task {
       var ticks = 0
