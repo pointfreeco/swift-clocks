@@ -25,13 +25,6 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
     XCTAssertEqual(checkIsFinished, true)
   }
 
-  func testSleepUntilExactlyNow() async throws {
-    let duration: Duration = .seconds(1)
-    let deadline = clock.now.advanced(by: duration)
-    await clock.advance(by: duration)
-    try await clock.sleep(until: deadline)
-  }
-
   func testAdvanceWithReentrantUnitsOfWork() async throws {
     let task = Task {
       var count = 0
@@ -219,5 +212,19 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
     let values = try await task.value
 
     XCTAssertEqual(values, [1, 2])
+  }
+
+  func testSleepUntilExactlyNow() async throws {
+    let before = Date()
+    Task {
+      try await Task.sleep(for: .seconds(1))
+      await clock.advance()
+    }
+    try await clock.sleep(until: clock.now)
+    XCTAssertEqual(
+      before.advanced(by: 1).timeIntervalSince1970,
+      Date().timeIntervalSince1970,
+      accuracy: 0.2
+    )
   }
 }
