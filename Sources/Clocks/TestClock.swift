@@ -105,7 +105,7 @@
       let id = UUID()
       do {
         let stream: AsyncThrowingStream<Never, Error>? = self.lock.sync {
-          guard deadline > self.now
+          guard deadline >= self.now
           else {
             return nil
           }
