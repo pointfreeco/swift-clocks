@@ -166,34 +166,36 @@
     ///
     /// See the documentation for ``TestClock`` to see how to use this method.
     public func advance(to deadline: Instant) async {
-      while self.lock.sync(operation: { self.now <= deadline }) {
-        await Task.megaYield()
-        let `return` = {
-          self.lock.lock()
-          self.suspensions.sort { $0.deadline < $1.deadline }
-
-          guard
-            let next = self.suspensions.first,
-            deadline >= next.deadline
-          else {
-            self.now = deadline
-            self.lock.unlock()
-            return true
-          }
-
-          self.now = next.deadline
-          self.suspensions.removeFirst()
-          self.lock.unlock()
-          next.continuation.finish()
-          return false
-        }()
-
-        if `return` {
+      await withMainSerialExecutor {
+        while self.lock.sync(operation: { self.now <= deadline }) {
           await Task.megaYield()
-          return
+          let `return` = {
+            self.lock.lock()
+            self.suspensions.sort { $0.deadline < $1.deadline }
+            
+            guard
+              let next = self.suspensions.first,
+              deadline >= next.deadline
+            else {
+              self.now = deadline
+              self.lock.unlock()
+              return true
+            }
+            
+            self.now = next.deadline
+            self.suspensions.removeFirst()
+            self.lock.unlock()
+            next.continuation.finish()
+            return false
+          }()
+          
+          if `return` {
+            await Task.megaYield()
+            return
+          }
         }
+        await Task.megaYield()
       }
-      await Task.megaYield()
     }
 
     /// Runs the clock until it has no scheduled sleeps left.

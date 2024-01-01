@@ -45,6 +45,23 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
     let ticks = try await task.value
     XCTAssertEqual(ticks, 5)
   }
+  
+  func testAdvanceWithThousandUnitsOfWork() async throws {
+    let timer = clock.timer(interval: .seconds(1))
+      .prefix(1000)
+    
+    let task = Task {
+      var ticks = 0
+      for await _ in timer {
+        ticks += 1
+      }
+      return ticks
+    }
+    
+    await self.clock.advance(by: .seconds(1000))
+    let ticks = await task.value
+    XCTAssertEqual(ticks, 1000)
+  }
 
   func testRun() async {
     let isFinished = ActorIsolated(false)
