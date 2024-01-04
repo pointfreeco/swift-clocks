@@ -114,7 +114,8 @@
     Duration: Hashable
   {
     public struct Instant: InstantProtocol {
-      public var offset: Duration
+      public let offset: Duration
+    
       public init(offset: Duration = .zero) {
         self.offset = offset
       }
