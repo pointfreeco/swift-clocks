@@ -132,8 +132,8 @@
       }
     }
 
-    public var now = Instant()
-    public var minimumResolution = Instant.Duration.zero
+    public var now: Instant
+    public var minimumResolution: Duration = .zero
     private let lock = NSLock()
 
     public init(now: Instant = .init()) {
