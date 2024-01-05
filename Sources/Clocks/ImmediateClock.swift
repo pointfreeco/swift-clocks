@@ -114,7 +114,7 @@
     Duration: Hashable
   {
     public struct Instant: InstantProtocol {
-      public let offset: Duration
+      fileprivate let offset: Duration
 
       public init(offset: Duration = .zero) {
         self.offset = offset
@@ -133,15 +133,15 @@
       }
     }
 
-    public var now: Instant
-    public var minimumResolution: Duration = .zero
+    public private(set) var now: Instant
+    public private(set) var minimumResolution: Duration = .zero
     private let lock = NSLock()
 
     public init(now: Instant = .init()) {
       self.now = now
     }
 
-    public func sleep(until deadline: Instant, tolerance: Instant.Duration?) async throws {
+    public func sleep(until deadline: Instant, tolerance: Duration?) async throws {
       try Task.checkCancellation()
       self.lock.sync { self.now = deadline }
       await Task.megaYield()
