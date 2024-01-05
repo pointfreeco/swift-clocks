@@ -66,7 +66,7 @@
   @available(iOS 16, macOS 13, tvOS 16, watchOS 9, *)
   public final class TestClock<Duration: DurationProtocol & Hashable>: Clock, @unchecked Sendable {
     public struct Instant: InstantProtocol {
-      public let offset: Duration
+      fileprivate let offset: Duration
 
       public init(offset: Duration = .zero) {
         self.offset = offset

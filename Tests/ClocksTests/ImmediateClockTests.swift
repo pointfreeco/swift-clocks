@@ -22,8 +22,9 @@ final class ImmediateClockTests: XCTestCase {
 
   func testNow() async throws {
     let clock = ImmediateClock()
+    let start = clock.now
     try await clock.sleep(for: .seconds(5))
-    XCTAssertEqual(clock.now.offset, .seconds(5))
+    XCTAssertEqual(start.advanced(by: .seconds(5)), clock.now)
   }
 
   func testCooperativeCancellation() async throws {

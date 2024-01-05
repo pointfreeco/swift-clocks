@@ -61,7 +61,7 @@
       self._sleep = { try await clock.sleep(until: start.advanced(by: $0.offset), tolerance: $1) }
     }
 
-    public var minimumResolution: Instant.Duration {
+    public var minimumResolution: Duration {
       self._minimumResolution()
     }
 
@@ -69,7 +69,7 @@
       self._now()
     }
 
-    public func sleep(until deadline: Instant, tolerance: Instant.Duration? = nil) async throws {
+    public func sleep(until deadline: Instant, tolerance: Duration? = nil) async throws {
       try await self._sleep(deadline, tolerance)
     }
   }

@@ -186,8 +186,9 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
     let task = Task {
       try await self.clock.sleep(for: .seconds(5))
     }
+    let start = self.clock.now
     await self.clock.advance(by: .seconds(5))
-    XCTAssertEqual(self.clock.now.offset, .seconds(5))
+    XCTAssertEqual(start.advanced(by: .seconds(5)), self.clock.now)
     try await task.value
   }
 
