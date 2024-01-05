@@ -115,7 +115,7 @@
   {
     public struct Instant: InstantProtocol {
       public let offset: Duration
-    
+
       public init(offset: Duration = .zero) {
         self.offset = offset
       }
