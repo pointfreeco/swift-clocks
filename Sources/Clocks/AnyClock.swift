@@ -35,7 +35,7 @@
   @available(iOS 16, macOS 13, tvOS 16, watchOS 9, *)
   public struct AnyClock<Duration: DurationProtocol & Hashable>: Clock {
     public struct Instant: InstantProtocol {
-      fileprivate var offset: Duration
+      fileprivate let offset: Duration
 
       public func advanced(by duration: Duration) -> Self {
         .init(offset: self.offset + duration)
