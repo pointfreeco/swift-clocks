@@ -1,4 +1,4 @@
-#if swift(>=5.7) && (canImport(RegexBuilder) || !os(macOS) && !targetEnvironment(macCatalyst))
+#if (canImport(RegexBuilder) || !os(macOS) && !targetEnvironment(macCatalyst))
   import ConcurrencyExtras
   import Foundation
 

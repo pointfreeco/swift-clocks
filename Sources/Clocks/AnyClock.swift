@@ -1,4 +1,4 @@
-#if swift(>=5.7) && (canImport(RegexBuilder) || !os(macOS) && !targetEnvironment(macCatalyst))
+#if (canImport(RegexBuilder) || !os(macOS) && !targetEnvironment(macCatalyst))
   /// A type-erased clock.
   ///
   /// This type provides a concrete alternative to `any Clock<Duration>` and makes it possible to
