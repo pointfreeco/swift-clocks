@@ -1,4 +1,4 @@
-#if swift(>=5.7) && (canImport(RegexBuilder) || !os(macOS) && !targetEnvironment(macCatalyst)) && canImport(SwiftUI)
+#if (canImport(RegexBuilder) || !os(macOS) && !targetEnvironment(macCatalyst)) && canImport(SwiftUI)
   import SwiftUI
 
   @available(macOS 13, iOS 16, watchOS 9, tvOS 16, *)
