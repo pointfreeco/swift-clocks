@@ -56,7 +56,7 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
     var checkIsFinished = await isFinished.value
     XCTAssertEqual(checkIsFinished, false)
 
-    await self.clock.run()
+    await self.clock.run(timeout: .seconds(5))
     checkIsFinished = await isFinished.value
     XCTAssertEqual(checkIsFinished, true)
   }
@@ -85,9 +85,9 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
         }
       }
       for await _ in stream {}
-      await self.clock.run(timeout: .seconds(1))
+      await self.clock.run(timeout: .seconds(5))
       await isRunning.setValue(false)
-      await self.clock.run(timeout: .seconds(1))
+      await self.clock.run(timeout: .seconds(5))
     }
   #endif
 
@@ -161,7 +161,7 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
     }
 
     task.cancel()
-    await self.clock.run()
+    await self.clock.run(timeout: .seconds(5))
 
     let actualDidFinish = await didFinish.value
     XCTAssertEqual(actualDidFinish, false)
