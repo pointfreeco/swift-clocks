@@ -85,9 +85,9 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
         }
       }
       for await _ in stream {}
-      await self.clock.run(timeout: .seconds(5))
+      await self.clock.run(timeout: .seconds(1))
       await isRunning.setValue(false)
-      await self.clock.run(timeout: .seconds(5))
+      await self.clock.run(timeout: .seconds(1))
     }
   #endif
 
