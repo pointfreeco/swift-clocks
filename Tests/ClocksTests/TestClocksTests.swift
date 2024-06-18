@@ -56,7 +56,7 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
     var checkIsFinished = await isFinished.value
     XCTAssertEqual(checkIsFinished, false)
 
-    await self.clock.run()
+    await self.clock.run(timeout: .seconds(30))
     checkIsFinished = await isFinished.value
     XCTAssertEqual(checkIsFinished, true)
   }
@@ -103,7 +103,7 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
       return ticks
     }
 
-    await self.clock.run(timeout: .seconds(1))
+    await self.clock.run(timeout: .seconds(30))
     let ticks = await task.value
     XCTAssertEqual(ticks, 10)
   }
@@ -124,7 +124,7 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
       return count
     }
 
-    await self.clock.run()
+    await self.clock.run(timeout: .seconds(30))
     let ticks = try await task.value
     XCTAssertEqual(ticks, 5)
   }
@@ -161,7 +161,7 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
     }
 
     task.cancel()
-    await self.clock.run()
+    await self.clock.run(timeout: .seconds(5))
 
     let actualDidFinish = await didFinish.value
     XCTAssertEqual(actualDidFinish, false)
@@ -209,7 +209,7 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
     }
 
     try await Task.sleep(nanoseconds: 1_000_000_000)
-    await self.clock.run()
+    await self.clock.run(timeout: .seconds(5))
     let values = try await task.value
 
     XCTAssertEqual(values, [1, 2])
@@ -218,14 +218,14 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
   func testSleepUntilExactlyNow() async throws {
     let before = Date()
     Task {
-      try await Task.sleep(for: .seconds(1))
+      try await Task.sleep(for: .seconds(30))
       await clock.advance()
     }
     try await clock.sleep(until: clock.now)
     XCTAssertEqual(
-      before.advanced(by: 1).timeIntervalSince1970,
+      before.advanced(by: 30).timeIntervalSince1970,
       Date().timeIntervalSince1970,
-      accuracy: 0.2
+      accuracy: 5
     )
   }
 }

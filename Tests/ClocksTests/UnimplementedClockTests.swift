@@ -4,7 +4,6 @@
 
   @available(iOS 16, macOS 13, tvOS 16, watchOS 9, *)
   final class UnimplementedClockTests: XCTestCase {
-    @MainActor
     func testUnimplementedClock() async throws {
       XCTExpectFailure {
         [
@@ -18,7 +17,6 @@
       try await clock.sleep(for: .seconds(1))
     }
 
-    @MainActor
     func testUnimplementedClock_WithName() async throws {
       XCTExpectFailure {
         [
@@ -32,7 +30,6 @@
       try await clock.sleep(for: .seconds(1))
     }
 
-    @MainActor
     func testNow() async throws {
       XCTExpectFailure {
         [
@@ -46,18 +43,17 @@
       try await clock.sleep(for: .seconds(5))
     }
 
-    @MainActor
     func testCooperativeCancellation() async throws {
-      XCTExpectFailure {
-        [
-          "Unimplemented: Clock.sleep",
-          "Unimplemented: Clock.now",
-        ]
-        .contains($0.compactDescription)
-      }
-
       let clock = UnimplementedClock()
       let task = Task {
+        XCTExpectFailure {
+          [
+            "Unimplemented: Clock.sleep",
+            "Unimplemented: Clock.now",
+          ]
+          .contains($0.compactDescription)
+        }
+
         try? await Task.sleep(nanoseconds: 1_000_000_000 / 3)
         try await clock.sleep(for: .seconds(1))
       }
