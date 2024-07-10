@@ -1,7 +1,7 @@
 #if (canImport(RegexBuilder) || !os(macOS) && !targetEnvironment(macCatalyst))
   import ConcurrencyExtras
   import Foundation
-  import XCTestDynamicOverlay
+  import IssueReporting
 
   /// A clock whose time can be controlled in a deterministic manner.
   ///
@@ -225,8 +225,10 @@
     ///   - duration: The amount of time to allow for all work on the clock to finish.
     public func run(
       timeout duration: Swift.Duration = .milliseconds(500),
-      file: StaticString = #file,
-      line: UInt = #line
+      fileID: StaticString = #fileID,
+      filePath: StaticString = #filePath,
+      line: UInt = #line,
+      column: UInt = #column
     ) async {
       do {
         try await withThrowingTaskGroup(of: Void.self) { group in
@@ -248,7 +250,7 @@
           group.cancelAll()
         }
       } catch {
-        XCTFail(
+        reportIssue(
           """
           Expected all sleeps to finish, but some are still suspending after \(duration).
 
@@ -258,8 +260,10 @@
 
           You can also increase the timeout of 'run' to be greater than \(duration).
           """,
-          file: file,
-          line: line
+          fileID: fileID,
+          filePath: filePath,
+          line: line,
+          column: column
         )
       }
     }

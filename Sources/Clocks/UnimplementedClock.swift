@@ -1,7 +1,7 @@
 #if (canImport(RegexBuilder) || !os(macOS) && !targetEnvironment(macCatalyst))
   import ConcurrencyExtras
   import Foundation
-  import XCTestDynamicOverlay
+  import IssueReporting
 
   /// A clock that causes an XCTest failure when any of its endpoints are invoked.
   ///
@@ -101,17 +101,17 @@
     }
 
     public var now: Instant {
-      XCTFail("Unimplemented: \(self.name).now")
+      reportIssue("Unimplemented: \(self.name).now")
       return Instant(rawValue: self.base.now)
     }
 
     public var minimumResolution: Duration {
-      XCTFail("Unimplemented: \(self.name).minimumResolution")
+      reportIssue("Unimplemented: \(self.name).minimumResolution")
       return self.base.minimumResolution
     }
 
     public func sleep(until deadline: Instant, tolerance: Duration?) async throws {
-      XCTFail("Unimplemented: \(self.name).sleep")
+      reportIssue("Unimplemented: \(self.name).sleep")
       try await self.base.sleep(until: deadline.rawValue, tolerance: tolerance)
     }
   }
