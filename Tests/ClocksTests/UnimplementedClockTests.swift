@@ -7,8 +7,8 @@
     func testUnimplementedClock() async throws {
       XCTExpectFailure {
         [
-          "Unimplemented: Clock.sleep",
-          "Unimplemented: Clock.now",
+          "failed - Unimplemented: Clock.sleep",
+          "failed - Unimplemented: Clock.now",
         ]
         .contains($0.compactDescription)
       }
@@ -20,8 +20,8 @@
     func testUnimplementedClock_WithName() async throws {
       XCTExpectFailure {
         [
-          "Unimplemented: ContinuousClock.sleep",
-          "Unimplemented: ContinuousClock.now",
+          "failed - Unimplemented: ContinuousClock.sleep",
+          "failed - Unimplemented: ContinuousClock.now",
         ]
         .contains($0.compactDescription)
       }
@@ -33,8 +33,8 @@
     func testNow() async throws {
       XCTExpectFailure {
         [
-          "Unimplemented: Clock.sleep",
-          "Unimplemented: Clock.now",
+          "failed - Unimplemented: Clock.sleep",
+          "failed - Unimplemented: Clock.now",
         ]
         .contains($0.compactDescription)
       }
@@ -48,8 +48,8 @@
       let task = Task {
         XCTExpectFailure {
           [
-            "Unimplemented: Clock.sleep",
-            "Unimplemented: Clock.now",
+            "failed - Unimplemented: Clock.sleep",
+            "failed - Unimplemented: Clock.now",
           ]
           .contains($0.compactDescription)
         }
