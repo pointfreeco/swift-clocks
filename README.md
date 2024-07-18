@@ -388,5 +388,5 @@ This library is released under the MIT license. See [LICENSE](LICENSE) for detai
 [mbrandonw]: https://github.com/mbrandonw
 [stephencelis]: https://github.com/stephencelis
 [clock-collection]: https://www.pointfree.co/collections/concurrency/clocks
-[clock-docs]: http://pointfreeco.github.io/swift-clocks/main/documentation/clocks
+[clock-docs]: https://swiftpackageindex.com/pointfreeco/swift-clocks/main/documentation/clocks
 [test-clock-docs]: todo
