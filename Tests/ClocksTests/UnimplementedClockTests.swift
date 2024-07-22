@@ -13,7 +13,7 @@
         .contains($0.compactDescription)
       }
 
-      let clock: some Clock<Duration> = .unimplemented
+      let clock: some Clock<Duration> = .unimplemented()
       try await clock.sleep(for: .seconds(1))
     }
 
