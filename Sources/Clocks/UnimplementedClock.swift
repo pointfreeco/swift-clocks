@@ -136,7 +136,7 @@
 
     public var minimumResolution: Duration {
       reportIssue(
-        "Unimplemented: \(self.name).minimumResolution"
+        "Unimplemented: \(self.name).minimumResolution",
         fileID: fileID,
         filePath: filePath,
         line: line,
@@ -147,7 +147,7 @@
 
     public func sleep(until deadline: Instant, tolerance: Duration?) async throws {
       reportIssue(
-        "Unimplemented: \(self.name).sleep"
+        "Unimplemented: \(self.name).sleep",
         fileID: fileID,
         filePath: filePath,
         line: line,
