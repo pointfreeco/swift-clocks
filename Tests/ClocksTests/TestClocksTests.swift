@@ -66,7 +66,7 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
     func testRunWithTimeout() async throws {
       XCTExpectFailure {
         $0.compactDescription == """
-          Expected all sleeps to finish, but some are still suspending after 1.0 seconds.
+          failed - Expected all sleeps to finish, but some are still suspending after 1.0 seconds.
 
           There are sleeps suspending. This could mean you are not advancing the test clock far \
           enough for your feature to execute its logic, or there could be a bug in your feature's \

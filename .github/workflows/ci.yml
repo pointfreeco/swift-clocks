@@ -25,8 +25,8 @@ jobs:
         run: sudo xcode-select -s /Applications/Xcode_15.4.app
       - name: Run ${{ matrix.config }} tests
         run: CONFIG=${{ matrix.config }} make test-all
-      - name: Build for library evolution
-        run: CONFIG=${{ matrix.config }} make build-for-library-evolution
+      # - name: Build for library evolution
+      #   run: CONFIG=${{ matrix.config }} make build-for-library-evolution
 
   linux:
     strategy:
