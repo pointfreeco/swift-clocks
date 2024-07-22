@@ -84,34 +84,75 @@
 
     private let base: AnyClock<Duration>
     private let name: String
+    private let fileID: StaticString
+    private let filePath: StaticString
+    private let line: UInt
+    private let column: UInt
 
     public init<C: Clock>(
       _ base: C,
-      name: String = "\(C.self)"
+      name: String = "\(C.self)",
+      fileID: StaticString = #fileID,
+      filePath: StaticString = #filePath,
+      line: UInt = #line,
+      column: UInt = #column
     ) where C.Duration == Duration {
       self.base = AnyClock(base)
       self.name = name
+      self.fileID = fileID
+      self.filePath = filePath
+      self.line = line
+      self.column = column
     }
 
     public init(
       name: String = "Clock",
-      now: ImmediateClock<Duration>.Instant = .init()
+      now: ImmediateClock<Duration>.Instant = .init(),
+      fileID: StaticString = #fileID,
+      filePath: StaticString = #filePath,
+      line: UInt = #line,
+      column: UInt = #column
     ) {
-      self.init(ImmediateClock(now: now), name: name)
+      self.init(
+        ImmediateClock(now: now),
+        name: name,
+        fileID: fileID,
+        filePath: filePath,
+        line: line,
+        column: column
+      )
     }
 
     public var now: Instant {
-      reportIssue("Unimplemented: \(self.name).now")
+      reportIssue(
+        "Unimplemented: \(self.name).now",
+        fileID: fileID,
+        filePath: filePath,
+        line: line,
+        column: column
+      )
       return Instant(rawValue: self.base.now)
     }
 
     public var minimumResolution: Duration {
-      reportIssue("Unimplemented: \(self.name).minimumResolution")
+      reportIssue(
+        "Unimplemented: \(self.name).minimumResolution"
+        fileID: fileID,
+        filePath: filePath,
+        line: line,
+        column: column
+      )
       return self.base.minimumResolution
     }
 
     public func sleep(until deadline: Instant, tolerance: Duration?) async throws {
-      reportIssue("Unimplemented: \(self.name).sleep")
+      reportIssue(
+        "Unimplemented: \(self.name).sleep"
+        fileID: fileID,
+        filePath: filePath,
+        line: line,
+        column: column
+      )
       try await self.base.sleep(until: deadline.rawValue, tolerance: tolerance)
     }
   }
@@ -129,11 +170,11 @@
     ///
     /// Constructs and returns an ``UnimplementedClock``
     ///
-    /// > Important: Due to [a bug in Swift](https://github.com/apple/swift/issues/61645), this static
-    /// > value cannot be used in an existential context:
+    /// > Important: Due to [a bug in Swift <6](https://github.com/apple/swift/issues/61645), this
+    /// > static value cannot be used in an existential context:
     /// >
     /// > ```swift
-    /// > let clock: any Clock<Duration> = .unimplemented  // 🛑
+    /// > let clock: any Clock<Duration> = .unimplemented()  // 🛑
     /// > ```
     /// >
     /// > To work around this bug, construct an unimplemented clock directly:
@@ -141,8 +182,13 @@
     /// > ```swift
     /// > let clock: any Clock<Duration> = UnimplementedClock()  // ✅
     /// > ```
-    public static var unimplemented: Self {
-      UnimplementedClock()
+    public static func unimplemented(
+      fileID: StaticString = #fileID,
+      filePath: StaticString = #filePath,
+      line: UInt = #line,
+      column: UInt = #column
+    ) -> Self {
+      UnimplementedClock(fileID: fileID, filePath: filePath, line: line, column: column)
     }
   }
 #endif
