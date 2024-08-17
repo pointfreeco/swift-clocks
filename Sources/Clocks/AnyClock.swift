@@ -33,7 +33,7 @@
   /// }
   /// ```
   @available(iOS 16, macOS 13, tvOS 16, watchOS 9, *)
-  public struct AnyClock<Duration: DurationProtocol & Hashable>: Clock {
+  public final class AnyClock<Duration: DurationProtocol & Hashable>: Clock {
     public struct Instant: InstantProtocol {
       fileprivate let offset: Duration
 
@@ -50,9 +50,9 @@
       }
     }
 
-    private var _minimumResolution: @Sendable () -> Duration
-    private var _now: @Sendable () -> Instant
-    private var _sleep: @Sendable (Instant, Duration?) async throws -> Void
+    private let _minimumResolution: @Sendable () -> Duration
+    private let _now: @Sendable () -> Instant
+    private let _sleep: @Sendable (Instant, Duration?) async throws -> Void
 
     public init<C: Clock>(_ clock: C) where C.Instant.Duration == Duration {
       let start = clock.now
