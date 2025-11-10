@@ -1,4 +1,5 @@
 {
+  "originHash" : "ed7ab9572c69a3dc124037a3b24680f7164dd032be3ba0cf3451ff4f654deccd",
   "pins" : [
     {
       "identity" : "swift-concurrency-extras",
@@ -28,14 +29,14 @@
       }
     },
     {
-      "identity" : "swift-issue-reporting",
+      "identity" : "xctest-dynamic-overlay",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/pointfreeco/swift-issue-reporting",
+      "location" : "https://github.com/pointfreeco/xctest-dynamic-overlay",
       "state" : {
-        "revision" : "926f43898706eaa127db79ac42138e1ad7e85a3f",
-        "version" : "1.2.0"
+        "revision" : "39de59b2d47f7ef3ca88a039dff3084688fe27f4",
+        "version" : "1.5.2"
       }
     }
   ],
-  "version" : 2
+  "version" : 3
 }
