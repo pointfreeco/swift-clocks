@@ -28,4 +28,7 @@
 
   @available(iOS 16, macOS 13, tvOS 16, watchOS 9, *)
   extension TestClock: NonsendingClock {}
+
+  @available(iOS 16, macOS 13, tvOS 16, watchOS 9, *)
+  extension UnimplementedClock: NonsendingClock {}
 #endif
