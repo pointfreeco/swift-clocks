@@ -25,7 +25,7 @@
   ///   func startTimerButtonTapped() {
   ///     self.timerTask = Task {
   ///       while true {
-  ///         try await self.clock.sleep(for: .seconds(5))
+  ///         try await self.clock.sleep(for: .seconds(1))
   ///         self.count += 1
   ///       }
   ///     }
