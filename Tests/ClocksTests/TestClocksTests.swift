@@ -219,14 +219,14 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
   func testSleepUntilExactlyNow() async throws {
     let before = Date()
     Task {
-      try await Task.sleep(for: .seconds(30))
+      try await Task.sleep(for: .seconds(1))
       await clock.advance()
     }
     try await clock.sleep(until: clock.now)
     XCTAssertEqual(
-      before.advanced(by: 30).timeIntervalSince1970,
+      before.advanced(by: 1).timeIntervalSince1970,
       Date().timeIntervalSince1970,
-      accuracy: 5
+      accuracy: 0.2
     )
   }
 }
