@@ -46,12 +46,13 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
     XCTAssertEqual(ticks, 5)
   }
 
-  func testRun() async {
+  func testRun() async throws {
     let isFinished = ActorIsolated(false)
     Task {
       try await self.clock.sleep(until: self.clock.now.advanced(by: .seconds(1)))
       await isFinished.setValue(true)
     }
+    try await Task.sleep(for: .seconds(0.1))
 
     var checkIsFinished = await isFinished.value
     XCTAssertEqual(checkIsFinished, false)
