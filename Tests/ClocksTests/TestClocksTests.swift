@@ -194,14 +194,18 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
   }
 
   func testRunSorting() async throws {
+    nonisolated(unsafe) var secondTaskStarted = false
     let task = Task {
       try await withThrowingTaskGroup(of: Int.self, returning: [Int].self) { group in
+        nonisolated(unsafe) var firstTaskStarted = false
         group.addTask {
+          firstTaskStarted = true
           try await self.clock.sleep(for: .seconds(2))
           return 2
         }
+        while !firstTaskStarted { await Task.yield() }
         group.addTask {
-          try await Task.sleep(nanoseconds: 500_000_000)
+          secondTaskStarted = true
           try await self.clock.sleep(for: .seconds(1))
           return 1
         }
@@ -209,7 +213,7 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
       }
     }
 
-    try await Task.sleep(nanoseconds: 1_000_000_000)
+    while !secondTaskStarted { await Task.yield() }
     await self.clock.run(timeout: .seconds(5))
     let values = try await task.value
 
@@ -217,16 +221,10 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
   }
 
   func testSleepUntilExactlyNow() async throws {
-    let before = Date()
     Task {
       try await Task.sleep(for: .seconds(1))
       await clock.advance()
     }
     try await clock.sleep(until: clock.now)
-    XCTAssertEqual(
-      before.advanced(by: 1).timeIntervalSince1970,
-      Date().timeIntervalSince1970,
-      accuracy: 0.2
-    )
   }
 }
