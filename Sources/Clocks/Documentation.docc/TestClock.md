@@ -4,6 +4,7 @@
 
 ### Creating test clocks
 
+- ``_Concurrency/Clock/test``
 - ``init(now:)``
 - ``init()``
 

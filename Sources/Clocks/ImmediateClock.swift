@@ -160,19 +160,6 @@
     /// A clock that does not suspend when sleeping.
     ///
     /// Constructs and returns an ``ImmediateClock``
-    ///
-    /// > Important: Due to [a bug in Swift](https://github.com/apple/swift/issues/61645), this static
-    /// > value cannot be used in an existential context:
-    /// >
-    /// > ```swift
-    /// > let clock: any Clock<Duration> = .immediate  // 🛑
-    /// > ```
-    /// >
-    /// > To work around this bug, construct an immediate clock directly:
-    /// >
-    /// > ```swift
-    /// > let clock: any Clock<Duration> = ImmediateClock()  // ✅
-    /// > ```
     public static var immediate: Self {
       ImmediateClock()
     }

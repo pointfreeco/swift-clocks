@@ -169,19 +169,6 @@
     /// A clock that causes an XCTest failure when any of its endpoints are invoked.
     ///
     /// Constructs and returns an ``UnimplementedClock``
-    ///
-    /// > Important: Due to [a bug in Swift <6](https://github.com/apple/swift/issues/61645), this
-    /// > static value cannot be used in an existential context:
-    /// >
-    /// > ```swift
-    /// > let clock: any Clock<Duration> = .unimplemented()  // 🛑
-    /// > ```
-    /// >
-    /// > To work around this bug, construct an unimplemented clock directly:
-    /// >
-    /// > ```swift
-    /// > let clock: any Clock<Duration> = UnimplementedClock()  // ✅
-    /// > ```
     public static func unimplemented(
       fileID: StaticString = #fileID,
       filePath: StaticString = #filePath,

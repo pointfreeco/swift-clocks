@@ -281,4 +281,14 @@
       self.init(now: .init())
     }
   }
+
+  @available(iOS 16, macOS 13, tvOS 16, watchOS 9, *)
+  extension Clock where Self == TestClock<Swift.Duration> {
+    /// A clock whose time can be controlled in a deterministic manner.
+    ///  
+    /// Constructs and returns an ``TestClock``.
+    public static var test: Self {
+      TestClock()
+    }
+  }
 #endif
