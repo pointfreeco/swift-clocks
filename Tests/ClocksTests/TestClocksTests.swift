@@ -97,7 +97,9 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
     let timer = clock.timer(interval: .seconds(1))
       .prefix(10)
 
+    let timerStarted = LockIsolated(false)
     let task = Task {
+      timerStarted.withValue { $0 = true }
       var ticks = 0
       for await _ in timer {
         ticks += 1
@@ -105,13 +107,16 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
       return ticks
     }
 
+    while !timerStarted.withValue(\.self) { await Task.yield() }
     await self.clock.run(timeout: .seconds(30))
     let ticks = await task.value
     XCTAssertEqual(ticks, 10)
   }
 
   func testRunWithReentrantUnitsOfWork() async throws {
+    let taskStarted = LockIsolated(false)
     let task = Task {
+      taskStarted.withValue { $0 = true }
       var count = 0
       try await self.clock.sleep(until: self.clock.now.advanced(by: .seconds(1)))
       count += 1
@@ -126,6 +131,7 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
       return count
     }
 
+    while !taskStarted.withValue(\.self) { await Task.yield() }
     await self.clock.run(timeout: .seconds(30))
     let ticks = try await task.value
     XCTAssertEqual(ticks, 5)
