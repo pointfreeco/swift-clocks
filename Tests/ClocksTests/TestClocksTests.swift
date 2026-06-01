@@ -1,4 +1,5 @@
 import Clocks
+import ConcurrencyExtras
 import XCTest
 
 @available(iOS 16, macOS 13, tvOS 16, watchOS 9, *)
@@ -194,18 +195,18 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
   }
 
   func testRunSorting() async throws {
-    nonisolated(unsafe) var secondTaskStarted = false
+    let secondTaskStarted = LockIsolated(false)
     let task = Task {
       try await withThrowingTaskGroup(of: Int.self, returning: [Int].self) { group in
-        nonisolated(unsafe) var firstTaskStarted = false
+        let firstTaskStarted = LockIsolated(false)
         group.addTask {
-          firstTaskStarted = true
+          firstTaskStarted.withValue { $0 = true }
           try await self.clock.sleep(for: .seconds(2))
           return 2
         }
-        while !firstTaskStarted { await Task.yield() }
+        while !firstTaskStarted.withValue(\.self) { await Task.yield() }
         group.addTask {
-          secondTaskStarted = true
+          secondTaskStarted.withValue { $0 = true }
           try await self.clock.sleep(for: .seconds(1))
           return 1
         }
@@ -213,7 +214,7 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
       }
     }
 
-    while !secondTaskStarted { await Task.yield() }
+    while !secondTaskStarted.withValue(\.self) { await Task.yield() }
     await self.clock.run(timeout: .seconds(5))
     let values = try await task.value
 
