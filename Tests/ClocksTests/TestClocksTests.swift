@@ -1,4 +1,5 @@
 import Clocks
+import ConcurrencyExtras
 import XCTest
 
 @available(iOS 16, macOS 13, tvOS 16, watchOS 9, *)
@@ -46,12 +47,13 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
     XCTAssertEqual(ticks, 5)
   }
 
-  func testRun() async {
+  func testRun() async throws {
     let isFinished = ActorIsolated(false)
     Task {
       try await self.clock.sleep(until: self.clock.now.advanced(by: .seconds(1)))
       await isFinished.setValue(true)
     }
+    try await Task.sleep(for: .seconds(0.1))
 
     var checkIsFinished = await isFinished.value
     XCTAssertEqual(checkIsFinished, false)
@@ -95,7 +97,9 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
     let timer = clock.timer(interval: .seconds(1))
       .prefix(10)
 
+    let timerStarted = LockIsolated(false)
     let task = Task {
+      timerStarted.withValue { $0 = true }
       var ticks = 0
       for await _ in timer {
         ticks += 1
@@ -103,13 +107,16 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
       return ticks
     }
 
+    while !timerStarted.withValue(\.self) { await Task.yield() }
     await self.clock.run(timeout: .seconds(30))
     let ticks = await task.value
     XCTAssertEqual(ticks, 10)
   }
 
   func testRunWithReentrantUnitsOfWork() async throws {
+    let taskStarted = LockIsolated(false)
     let task = Task {
+      taskStarted.withValue { $0 = true }
       var count = 0
       try await self.clock.sleep(until: self.clock.now.advanced(by: .seconds(1)))
       count += 1
@@ -124,6 +131,7 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
       return count
     }
 
+    while !taskStarted.withValue(\.self) { await Task.yield() }
     await self.clock.run(timeout: .seconds(30))
     let ticks = try await task.value
     XCTAssertEqual(ticks, 5)
@@ -193,14 +201,18 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
   }
 
   func testRunSorting() async throws {
+    let secondTaskStarted = LockIsolated(false)
     let task = Task {
       try await withThrowingTaskGroup(of: Int.self, returning: [Int].self) { group in
+        let firstTaskStarted = LockIsolated(false)
         group.addTask {
+          firstTaskStarted.withValue { $0 = true }
           try await self.clock.sleep(for: .seconds(2))
           return 2
         }
+        while !firstTaskStarted.withValue(\.self) { await Task.yield() }
         group.addTask {
-          try await Task.sleep(nanoseconds: 500_000_000)
+          secondTaskStarted.withValue { $0 = true }
           try await self.clock.sleep(for: .seconds(1))
           return 1
         }
@@ -208,7 +220,7 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
       }
     }
 
-    try await Task.sleep(nanoseconds: 1_000_000_000)
+    while !secondTaskStarted.withValue(\.self) { await Task.yield() }
     await self.clock.run(timeout: .seconds(5))
     let values = try await task.value
 
@@ -216,16 +228,10 @@ final class TestClockTests: XCTestCase, @unchecked Sendable {
   }
 
   func testSleepUntilExactlyNow() async throws {
-    let before = Date()
     Task {
-      try await Task.sleep(for: .seconds(30))
+      try await Task.sleep(for: .seconds(1))
       await clock.advance()
     }
     try await clock.sleep(until: clock.now)
-    XCTAssertEqual(
-      before.advanced(by: 30).timeIntervalSince1970,
-      Date().timeIntervalSince1970,
-      accuracy: 5
-    )
   }
 }

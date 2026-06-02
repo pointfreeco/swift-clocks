@@ -1,5 +1,5 @@
 #if (canImport(RegexBuilder) || !os(macOS) && !targetEnvironment(macCatalyst)) && canImport(SwiftUI)
-  import SwiftUI
+  public import SwiftUI
 
   @available(macOS 13, iOS 16, watchOS 9, tvOS 16, *)
   extension EnvironmentValues {

@@ -93,7 +93,7 @@
       [(
         id: UUID,
         deadline: Instant,
-        continuation: AsyncThrowingStream<Never, Error>.Continuation
+        continuation: AsyncThrowingStream<Never, any Error>.Continuation
       )] = []
 
     public init(now: Instant = .init()) {
@@ -104,12 +104,12 @@
       try Task.checkCancellation()
       let id = UUID()
       do {
-        let stream: AsyncThrowingStream<Never, Error>? = self.lock.sync {
+        let stream: AsyncThrowingStream<Never, any Error>? = self.lock.sync {
           guard deadline >= self.now
           else {
             return nil
           }
-          return AsyncThrowingStream<Never, Error> { continuation in
+          return AsyncThrowingStream<Never, any Error> { continuation in
             self.suspensions.append((id: id, deadline: deadline, continuation: continuation))
           }
         }
