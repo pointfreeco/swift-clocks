@@ -8,10 +8,10 @@ let package = Package(
   //     so that depending libraries and applications can conditionally use the library via
   //     availability checks.
   platforms: [
-    .iOS(.v13),
-    .macOS(.v10_15),
-    .tvOS(.v13),
-    .watchOS(.v6),
+    .iOS(.v15),
+    .macOS(.v12),
+    .tvOS(.v15),
+    .watchOS(.v9),
   ],
   products: [
     .library(
