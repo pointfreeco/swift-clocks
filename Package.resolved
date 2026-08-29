@@ -1,13 +1,13 @@
 {
-  "originHash" : "ed7ab9572c69a3dc124037a3b24680f7164dd032be3ba0cf3451ff4f654deccd",
+  "originHash" : "7dea21d8cce7027c9dcef7b962be55bc163c79be3e43fefa51d201d8d6dce177",
   "pins" : [
     {
       "identity" : "swift-concurrency-extras",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-concurrency-extras",
       "state" : {
-        "revision" : "5a3825302b1a0d744183200915a47b508c828e6f",
-        "version" : "1.3.2"
+        "revision" : "a90e2e40a7a840a853dd29e57cbef5dbb72c9d5b",
+        "version" : "1.4.0"
       }
     },
     {
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-docc-plugin",
       "state" : {
-        "revision" : "e977f65879f82b375a044c8837597f690c067da6",
-        "version" : "1.4.6"
+        "revision" : "647c708be89f834fa6a6d4945442793a77ddf5b6",
+        "version" : "1.5.0"
       }
     },
     {
@@ -29,12 +29,12 @@
       }
     },
     {
-      "identity" : "xctest-dynamic-overlay",
+      "identity" : "swift-issue-reporting",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/pointfreeco/xctest-dynamic-overlay",
+      "location" : "https://github.com/pointfreeco/swift-issue-reporting",
       "state" : {
-        "revision" : "dfd70507def84cb5fb821278448a262c6ff2bbad",
-        "version" : "1.9.0"
+        "revision" : "71c7c9a761d1ca6ed4ccb6ced040fe1c1a39e8e7",
+        "version" : "2.1.0"
       }
     }
   ],
