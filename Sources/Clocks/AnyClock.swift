@@ -52,14 +52,41 @@
 
     private let _minimumResolution: @Sendable () -> Duration
     private let _now: @Sendable () -> Instant
-    private let _sleep: @Sendable (Instant, Duration?) async throws -> Void
+    private let _sleep:
+      @Sendable (Instant, Duration?, isolated (any Actor)?) async throws -> Void
 
     public init<C: Clock>(_ clock: C) where C.Instant.Duration == Duration {
       let start = clock.now
       self._now = { Instant(offset: start.duration(to: clock.now)) }
       self._minimumResolution = { clock.minimumResolution }
-      self._sleep = { try await clock.sleep(until: start.advanced(by: $0.offset), tolerance: $1) }
+      self._sleep = { deadline, tolerance, _ in
+        try await clock.sleep(
+          until: start.advanced(by: deadline.offset),
+          tolerance: tolerance
+        )
+      }
     }
+
+    #if compiler(>=6.2)
+      public convenience init<C: NonsendingClock>(_ clock: C)
+      where C.Instant.Duration == Duration {
+        self.init(nonsending: clock)
+      }
+
+      public init<C: NonsendingClock>(nonsending clock: C)
+      where C.Instant.Duration == Duration {
+        let start = clock.now
+        self._now = { Instant(offset: start.duration(to: clock.now)) }
+        self._minimumResolution = { clock.minimumResolution }
+        self._sleep = { deadline, tolerance, isolation in
+          try await clock.sleep(
+            until: start.advanced(by: deadline.offset),
+            tolerance: tolerance,
+            isolation: isolation
+          )
+        }
+      }
+    #endif
 
     public var minimumResolution: Duration {
       self._minimumResolution()
@@ -69,8 +96,24 @@
       self._now()
     }
 
-    public func sleep(until deadline: Instant, tolerance: Duration? = nil) async throws {
-      try await self._sleep(deadline, tolerance)
+    nonisolated(nonsending)
+      public func sleep(until deadline: Instant, tolerance: Duration? = nil) async throws
+    {
+      try await self.sleep(
+        until: deadline,
+        tolerance: tolerance,
+        isolation: #isolation
+      )
     }
+
+    #if compiler(>=6.2)
+      public func sleep(
+        until deadline: Instant,
+        tolerance: Duration? = nil,
+        isolation: isolated (any Actor)?
+      ) async throws {
+        try await self._sleep(deadline, tolerance, isolation)
+      }
+    #endif
   }
 #endif

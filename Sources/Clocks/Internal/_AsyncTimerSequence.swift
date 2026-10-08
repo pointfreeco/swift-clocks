@@ -14,7 +14,7 @@
   ///
   /// Internal use only. Not meant to be used outside the library.
   @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
-  public struct _AsyncTimerSequence<C: Clock>: AsyncSequence {
+  public struct _AsyncTimerSequence<C: NonsendingClock>: AsyncSequence {
     public typealias Element = C.Instant
 
     /// The iterator for an `AsyncTimerSequence` instance.
@@ -42,13 +42,25 @@
         }
       }
 
-      public mutating func next() async -> C.Instant? {
+      nonisolated(nonsending)
+        public mutating func next() async -> C.Instant?
+      {
+        await self.next(isolation: #isolation)
+      }
+
+      public mutating func next(
+        isolation: isolated (any Actor)?
+      ) async -> C.Instant? {
         guard let clock = clock else {
           return nil
         }
         let next = nextDeadline(clock)
         do {
-          try await clock.sleep(until: next, tolerance: tolerance)
+          try await clock.sleep(
+            until: next,
+            tolerance: tolerance,
+            isolation: isolation
+          )
         } catch {
           self.clock = nil
           return nil
