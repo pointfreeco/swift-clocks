@@ -1,5 +1,4 @@
 #if (canImport(RegexBuilder) || !os(macOS) && !targetEnvironment(macCatalyst))
-  import ConcurrencyExtras
   import Foundation
   import IssueReporting
 
@@ -65,7 +64,7 @@
   /// failures. This will help us find the tests that should be updated to assert on the new behavior
   /// in the feature.
   @available(iOS 16, macOS 13, tvOS 16, watchOS 9, *)
-  public struct UnimplementedClock<Duration: DurationProtocol & Hashable>: Clock {
+  public struct UnimplementedClock<Duration: DurationProtocol & Hashable>: NonsendingClock {
     public struct Instant: InstantProtocol {
       fileprivate let rawValue: AnyClock<Duration>.Instant
 

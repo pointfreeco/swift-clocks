@@ -1,294 +1,179 @@
-#if (canImport(RegexBuilder) || !os(macOS) && !targetEnvironment(macCatalyst))
-  import ConcurrencyExtras
-  import Foundation
-  import IssueReporting
+import Foundation
+import IssueReporting
 
-  /// A clock whose time can be controlled in a deterministic manner.
-  ///
-  /// This clock is useful for testing how the flow of time affects asynchronous and concurrent code.
-  /// This includes any code that makes use of `sleep` or any time-based async operators, such as
-  /// timers, `debounce`, `throttle`, `timeout`, and more.
-  ///
-  /// For example, suppose you have a model that encapsulates the behavior of a timer that can be
-  /// started and stopped:
-  ///
-  /// ```swift
-  /// @MainActor
-  /// class FeatureModel: ObservableObject {
-  ///   @Published var count = 0
-  ///   let clock: any Clock<Duration>
-  ///   var timerTask: Task<Void, Error>?
-  ///
-  ///   init(clock: any Clock<Duration>) {
-  ///     self.clock = clock
-  ///   }
-  ///   func startTimerButtonTapped() {
-  ///     self.timerTask = Task {
-  ///       while true {
-  ///         try await self.clock.sleep(for: .seconds(1))
-  ///         self.count += 1
-  ///       }
-  ///     }
-  ///   }
-  ///   func stopTimerButtonTapped() {
-  ///     self.timerTask?.cancel()
-  ///     self.timerTask = nil
-  ///   }
-  /// }
-  /// ```
-  ///
-  /// Here we have explicitly forced a clock to be provided in order to construct the `FeatureModel`.
-  /// This makes it possible to use a real life clock, such as `ContinuousClock`, when running on a
-  /// device or simulator, and use a more controllable clock in tests, such as the ``TestClock``.
-  ///
-  /// To write a test for this feature we can construct a `FeatureModel` with a ``TestClock``, then
-  /// advance the clock forward and assert on how the model changes:
-  ///
-  /// ```swift
-  /// func testTimer() async {
-  ///   let clock = TestClock()
-  ///   let model = FeatureModel(clock: clock)
-  ///
-  ///   XCTAssertEqual(model.count, 0)
-  ///   model.startTimerButtonTapped()
-  ///
-  ///   await clock.advance(by: .seconds(1))
-  ///   XCTAssertEqual(model.count, 1)
-  ///
-  ///   await clock.advance(by: .seconds(4))
-  ///   XCTAssertEqual(model.count, 5)
-  ///
-  ///   model.stopTimerButtonTapped()
-  ///   await clock.run()
-  /// }
-  /// ```
-  ///
-  @available(iOS 16, macOS 13, tvOS 16, watchOS 9, *)
-  public final class TestClock<Duration: DurationProtocol & Hashable>: Clock, @unchecked Sendable {
-    public struct Instant: InstantProtocol {
-      fileprivate let offset: Duration
+@available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
+public final class TestClock<Duration: DurationProtocol & Hashable>: NonsendingClock, Sendable {
+  public struct Instant: InstantProtocol {
+    fileprivate let offset: Duration
 
-      public init(offset: Duration = .zero) {
-        self.offset = offset
-      }
-
-      public func advanced(by duration: Duration) -> Self {
-        .init(offset: self.offset + duration)
-      }
-
-      public func duration(to other: Self) -> Duration {
-        other.offset - self.offset
-      }
-
-      public static func < (lhs: Self, rhs: Self) -> Bool {
-        lhs.offset < rhs.offset
-      }
+    public init(offset: Duration = .zero) {
+      self.offset = offset
     }
 
-    public var minimumResolution: Duration = .zero
-    public private(set) var now: Instant
-
-    private let lock = NSRecursiveLock()
-    private var suspensions:
-      [(
-        id: UUID,
-        deadline: Instant,
-        continuation: AsyncThrowingStream<Never, any Error>.Continuation
-      )] = []
-
-    public init(now: Instant = .init()) {
-      self.now = now
+    public func advanced(by duration: Duration) -> Self {
+      .init(offset: self.offset + duration)
     }
 
-    public func sleep(until deadline: Instant, tolerance: Duration? = nil) async throws {
-      try Task.checkCancellation()
-      let id = UUID()
-      do {
-        let stream: AsyncThrowingStream<Never, any Error>? = self.lock.sync {
-          guard deadline >= self.now
-          else {
-            return nil
-          }
-          return AsyncThrowingStream<Never, any Error> { continuation in
-            self.suspensions.append((id: id, deadline: deadline, continuation: continuation))
-          }
+    public func duration(to other: Self) -> Duration {
+      other.offset - self.offset
+    }
+
+    public static func < (lhs: Self, rhs: Self) -> Bool {
+      lhs.offset < rhs.offset
+    }
+  }
+
+  public var minimumResolution: Duration { .zero }
+  public var now: Instant { self.state.withLock { $0.now } }
+
+  private let state: LockIsolated<State>
+
+  public init(now: Instant = .init()) {
+    self.state = LockIsolated(State(now: now))
+  }
+
+  nonisolated(nonsending)
+    public func sleep(until deadline: Instant, tolerance: Duration? = nil) async throws
+  {
+    try await self.sleep(
+      until: deadline,
+      tolerance: tolerance,
+      isolation: #isolation
+    )
+  }
+
+  public func sleep(
+    until deadline: Instant,
+    tolerance: Duration? = nil,
+    isolation: isolated (any Actor)?
+  ) async throws {
+    try Task.checkCancellation()
+    let id = UUID()
+    guard let isolation
+    else {
+      reportIssue(
+        """
+        TestClock cannot deterministically advance a sleep from a nonisolated concurrent \
+        context. Call the clock from actor-isolated code.
+        """
+      )
+      return
+    }
+    try await withTaskCancellationHandler {
+      try await withCheckedThrowingContinuation { continuation in
+        let registration = self.state.withLock { state in
+          guard !Task.isCancelled else { return Registration.cancel }
+          guard deadline >= state.now else { return Registration.resume }
+          state.sleeps.append(
+            State.Sleep(
+              id: id,
+              deadline: deadline,
+              isolation: isolation,
+              continuation: continuation
+            )
+          )
+          return Registration.sleep
         }
-        guard let stream = stream
-        else { return }
-        for try await _ in stream {}
-        try Task.checkCancellation()
-      } catch is CancellationError {
-        self.lock.sync { self.suspensions.removeAll(where: { $0.id == id }) }
-        throw CancellationError()
-      } catch {
-        throw error
-      }
-    }
-
-    /// Throws an error if there are active sleeps on the clock.
-    ///
-    /// This can be useful for proving that your feature will not perform any more time-based
-    /// asynchrony. For example, the following will throw because the clock has an active suspension
-    /// scheduled:
-    ///
-    /// ```swift
-    /// let clock = TestClock()
-    /// Task {
-    ///   try await clock.sleep(for: .seconds(1))
-    /// }
-    /// try await clock.checkSuspension()
-    /// ```
-    ///
-    /// However, the following will not throw because advancing the clock has finished the suspension:
-    ///
-    /// ```swift
-    /// let clock = TestClock()
-    /// Task {
-    ///   try await clock.sleep(for: .seconds(1))
-    /// }
-    /// await clock.advance(for: .seconds(1))
-    /// try await clock.checkSuspension()
-    /// ```
-    public func checkSuspension() async throws {
-      await Task.megaYield()
-      guard self.lock.sync(operation: { self.suspensions.isEmpty })
-      else { throw SuspensionError() }
-    }
-
-    /// Advances the test clock's internal time by the duration.
-    ///
-    /// See the documentation for ``TestClock`` to see how to use this method.
-    public func advance(by duration: Duration = .zero) async {
-      await self.advance(to: self.lock.sync(operation: { self.now.advanced(by: duration) }))
-    }
-
-    /// Advances the test clock's internal time to the deadline.
-    ///
-    /// See the documentation for ``TestClock`` to see how to use this method.
-    public func advance(to deadline: Instant) async {
-      while self.lock.sync(operation: { self.now <= deadline }) {
-        await Task.megaYield()
-        let `return` = {
-          self.lock.lock()
-          self.suspensions.sort { $0.deadline < $1.deadline }
-
-          guard
-            let next = self.suspensions.first,
-            deadline >= next.deadline
-          else {
-            self.now = deadline
-            self.lock.unlock()
-            return true
-          }
-
-          self.now = next.deadline
-          self.suspensions.removeFirst()
-          self.lock.unlock()
-          next.continuation.finish()
-          return false
-        }()
-
-        if `return` {
-          await Task.megaYield()
-          return
+        switch registration {
+        case .cancel:
+          continuation.resume(throwing: CancellationError())
+        case .resume:
+          continuation.resume()
+        case .sleep:
+          break
         }
       }
-      await Task.megaYield()
-    }
-
-    /// Runs the clock until it has no scheduled sleeps left.
-    ///
-    /// This method is useful for letting a clock run to its end without having to explicitly account
-    /// for each sleep. For example, suppose you have a feature that runs a timer for 10 ticks, and
-    /// each tick it increments a counter. If you don't want to worry about advancing the timer for
-    /// each tick, you can instead just `run` the clock out:
-    ///
-    /// ```swift
-    /// func testTimer() async {
-    ///   let clock = TestClock()
-    ///   let model = FeatureModel(clock: clock)
-    ///
-    ///   XCTAssertEqual(model.count, 0)
-    ///   model.startTimerButtonTapped()
-    ///
-    ///   await clock.run()
-    ///   XCTAssertEqual(model.count, 10)
-    /// }
-    /// ```
-    ///
-    /// It is possible to run a clock that never finishes, hence causing a suspension that never
-    /// finishes. This can happen if you create an unbounded timer. In order to prevent holding up
-    /// your test suite forever, the ``run(timeout:file:line:)`` method will terminate and cause a
-    /// test failure if a timeout duration is reached.
-    ///
-    /// - Parameters:
-    ///   - duration: The amount of time to allow for all work on the clock to finish.
-    public func run(
-      timeout duration: Swift.Duration = .milliseconds(500),
-      fileID: StaticString = #fileID,
-      filePath: StaticString = #filePath,
-      line: UInt = #line,
-      column: UInt = #column
-    ) async {
-      do {
-        try await withThrowingTaskGroup(of: Void.self) { group in
-          group.addTask {
-            try await Task.sleep(until: .now.advanced(by: duration), clock: .continuous)
-            for suspension in self.suspensions {
-              suspension.continuation.finish(throwing: CancellationError())
-            }
-            throw CancellationError()
-          }
-          group.addTask {
-            await Task.megaYield()
-            while let deadline = self.lock.sync(operation: { self.suspensions.first?.deadline }) {
-              try Task.checkCancellation()
-              await self.advance(by: self.lock.sync(operation: { self.now.duration(to: deadline) }))
-            }
-          }
-          try await group.next()
-          group.cancelAll()
+    } onCancel: {
+      let sleep: State.Sleep? = self.state.withLock { state in
+        guard let index = state.sleeps.firstIndex(where: { $0.id == id })
+        else {
+          return nil
         }
-      } catch {
-        reportIssue(
-          """
-          Expected all sleeps to finish, but some are still suspending after \(duration).
+        return state.sleeps.remove(at: index)
+      }
+      sleep?.continuation.resume(throwing: CancellationError())
+    }
+    defer {
+      let continuation = self.state.withLock {
+        $0.advancementContinuations.removeValue(forKey: id)
+      }
+      continuation?.resume()
+    }
+    try Task.checkCancellation()
+  }
 
-          There are sleeps suspending. This could mean you are not advancing the test clock far \
-          enough for your feature to execute its logic, or there could be a bug in your feature's \
-          logic.
+  public func advance(by duration: Duration = .zero) async {
+    await self.advance(to: self.now.advanced(by: duration))
+  }
 
-          You can also increase the timeout of 'run' to be greater than \(duration).
-          """,
-          fileID: fileID,
-          filePath: filePath,
-          line: line,
-          column: column
-        )
+  public func advance(to deadline: Instant) async {
+    while true {
+      let sleep: State.Sleep? = self.state.withLock { state in
+        guard deadline >= state.now else { return nil }
+        state.sleeps.sort { $0.deadline < $1.deadline }
+        guard
+          let next = state.sleeps.first,
+          deadline >= next.deadline
+        else {
+          state.now = deadline
+          return nil
+        }
+        state.now = next.deadline
+        state.sleeps.removeFirst()
+        return next
+      }
+      guard let sleep else { return }
+      await sleep.isolation.run { isolation in
+        await withCheckedContinuation { continuation in
+          self.state.withLock {
+            $0.advancementContinuations[sleep.id] = continuation
+          }
+          sleep.continuation.resume()
+        }
       }
     }
   }
 
-  /// An error that indicates there are actively suspending sleeps scheduled on the clock.
-  ///
-  /// This error is thrown automatically by ``TestClock/checkSuspension()`` if there are actively
-  /// suspending sleeps scheduled on the clock.
-  public struct SuspensionError: Error {}
-
-  @available(iOS 16, macOS 13, tvOS 16, watchOS 9, *)
-  extension TestClock where Duration == Swift.Duration {
-    public convenience init() {
-      self.init(now: .init())
+  public func run() async {
+    while true {
+      let deadline = self.state.withLock {
+        $0.sleeps.min(by: { $0.deadline < $1.deadline })?.deadline
+      }
+      guard let deadline else { return }
+      await self.advance(to: deadline)
     }
   }
 
-  @available(iOS 16, macOS 13, tvOS 16, watchOS 9, *)
-  extension Clock where Self == TestClock<Swift.Duration> {
-    /// A clock whose time can be controlled in a deterministic manner.
-    ///
-    /// Constructs and returns an ``TestClock``.
-    public static var test: Self {
-      TestClock()
+  private struct State {
+    var now: Instant
+    var advancementContinuations: [UUID: CheckedContinuation<Void, Never>] = [:]
+    var sleeps: [Sleep] = []
+
+    struct Sleep {
+      let id: UUID
+      let deadline: Instant
+      let isolation: any Actor
+      let continuation: CheckedContinuation<Void, any Error>
     }
   }
-#endif
+
+  private enum Registration {
+    case cancel
+    case resume
+    case sleep
+  }
+}
+
+@available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
+extension TestClock where Duration == Swift.Duration {
+  public convenience init() {
+    self.init(now: .init())
+  }
+}
+
+extension Actor {
+  nonisolated(nonsending)
+  fileprivate func run(operation: (isolated Self) async -> Void) async {
+    await operation(self)
+  }
+}

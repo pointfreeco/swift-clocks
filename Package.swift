@@ -4,9 +4,6 @@ import PackageDescription
 
 let package = Package(
   name: "swift-clocks",
-  // NB: While the `Clock` protocol is iOS 16+, etc., the package should support earlier platforms
-  //     so that depending libraries and applications can conditionally use the library via
-  //     availability checks.
   platforms: [
     .iOS(.v15),
     .macOS(.v12),
@@ -21,14 +18,13 @@ let package = Package(
   ],
   dependencies: [
     .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.0.0"),
-    .package(url: "https://github.com/pointfreeco/swift-concurrency-extras", from: "1.0.0"),
     .package(url: "https://github.com/pointfreeco/swift-issue-reporting", from: "2.1.0"),
   ],
   targets: [
     .target(
       name: "Clocks",
       dependencies: [
-        .product(name: "ConcurrencyExtras", package: "swift-concurrency-extras"),
+        "Clocks2",
         .product(name: "IssueReporting", package: "swift-issue-reporting"),
       ]
     ),
@@ -38,6 +34,7 @@ let package = Package(
         "Clocks"
       ]
     ),
+    .target(name: "Clocks2")
   ],
   swiftLanguageModes: [.v6]
 )

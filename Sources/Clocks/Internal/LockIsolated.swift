@@ -1,7 +1,7 @@
 #if canImport(Foundation)
   import Foundation
 
-  final class _LockIsolated<Value>: @unchecked Sendable {
+  package final class LockIsolated<Value>: @unchecked Sendable {
     private var _value: Value
     private let lock = NSLock()
     init(_ value: @autoclosure @Sendable () throws -> Value) rethrows {

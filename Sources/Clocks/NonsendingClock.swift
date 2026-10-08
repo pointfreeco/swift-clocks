@@ -30,23 +30,8 @@
   }
 
   @available(iOS 16, macOS 13, tvOS 16, watchOS 9, *)
-  extension AnyClock: NonsendingClock {}
-
-  @available(iOS 16, macOS 13, tvOS 16, watchOS 9, *)
   extension ContinuousClock: NonsendingClock {}
 
   @available(iOS 16, macOS 13, tvOS 16, watchOS 9, *)
-  extension ImmediateClock: NonsendingClock {}
-
-  @available(iOS 16, macOS 13, tvOS 16, watchOS 9, *)
   extension SuspendingClock: NonsendingClock {}
-
-  @available(iOS 16, macOS 13, tvOS 16, watchOS 9, *)
-  extension TestClock: NonsendingClock {}
-
-  @available(iOS 26, macOS 26, tvOS 26, watchOS 26, *)
-  extension TestClock2: NonsendingClock {}
-
-  @available(iOS 16, macOS 13, tvOS 16, watchOS 9, *)
-  extension UnimplementedClock: NonsendingClock {}
 #endif

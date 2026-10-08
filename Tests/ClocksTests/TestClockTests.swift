@@ -1,15 +1,15 @@
-@testable import Clocks
-import ConcurrencyExtras
 import IssueReporting
 import Testing
 
+@testable import Clocks
+
 @MainActor
 @Suite
-struct TestClock2Tests {
+struct TestClockTests {
   @Test
   @available(anyAppleOS 26.0, *)
   func basics() async throws {
-    let clock = TestClock2()
+    let clock = TestClock()
     let dependency: any NonsendingClock<Swift.Duration> = clock
     var count = 0
     let task = Task.immediate {
@@ -25,7 +25,7 @@ struct TestClock2Tests {
   @Test
   @available(anyAppleOS 26.0, *)
   func testExistentialRunsThroughNextSuspension() async throws {
-    let clock = TestClock2()
+    let clock = TestClock()
     let dependency: any NonsendingClock<Swift.Duration> = clock
     var count = 0
 
@@ -45,7 +45,7 @@ struct TestClock2Tests {
   @Test
   @available(anyAppleOS 26.0, *)
   func testSleepUntil() async throws {
-    let clock = TestClock2()
+    let clock = TestClock()
     var count = 0
 
     let task = Task.immediate {
@@ -64,7 +64,7 @@ struct TestClock2Tests {
   @Test(arguments: Array(1...100))
   @available(anyAppleOS 26.0, *)
   func testRun(_: Int) async throws {
-    let clock = TestClock2()
+    let clock = TestClock()
     let dependency: any NonsendingClock<Swift.Duration> = clock
     var count = 0
 
@@ -81,12 +81,12 @@ struct TestClock2Tests {
     try await task.value
   }
 
-  @Test
+  @Test(arguments: Array(1...1000))
   @available(anyAppleOS 26.0, *)
-  func testTimer() async throws {
-    let clock = TestClock2()
+  func testTimer(_: Int) async throws {
+    let clock = TestClock()
     let dependency: any NonsendingClock<Swift.Duration> = clock
-    let timer = dependency.timer(interval: .seconds(1)).prefix(10_000)
+    let timer = dependency.timer(interval: .seconds(1)).prefix(100)
     var count = 0
 
     let task = Task.immediate {
@@ -95,16 +95,16 @@ struct TestClock2Tests {
       }
     }
 
-    await clock.advance(by: .seconds(10_000))
+    await clock.run()  //advance(by: .seconds(10_000))
 
-    #expect(count == 10_000)
+    #expect(count == 100)
     await task.value
   }
 
   @Test
   @available(anyAppleOS 26.0, *)
   func testCancellationRemovesSleep() async throws {
-    let clock = TestClock2()
+    let clock = TestClock()
     let dependency: any NonsendingClock<Swift.Duration> = clock
 
     let task = Task.immediate {
@@ -127,8 +127,7 @@ struct TestClock2Tests {
       case timedOut
     }
 
-
-    let clock = TestClock2()
+    let clock = TestClock()
     let task = Task.immediate {
       withUnsafeCurrentTask { task in
         task?.cancel()
@@ -167,7 +166,7 @@ struct TestClock2Tests {
   @available(anyAppleOS 26.0, *)
   @concurrent
   func testCancellationRacingWithSleepRegistration() async throws {
-    let clock = TestClock2()
+    let clock = TestClock()
     let completed = LockIsolated(0)
     let attemptCount = 1_000
     var sleepTasks: [Task<Void, Never>] = []
@@ -176,29 +175,29 @@ struct TestClock2Tests {
       let started = LockIsolated(false)
       let sleepTask = LockIsolated<Task<Void, Never>?>(nil)
       let cancellationTask = Task.detached {
-        while !started.value {
+        while !started.withLock(\.self) {
           await Task.yield()
         }
-        sleepTask.value?.cancel()
+        sleepTask.withLock { $0?.cancel() }
       }
       let task = Task { @MainActor in
-        started.setValue(true)
+        started.withLock { $0 = true }
         do {
           try await clock.sleep(for: .seconds(1))
         } catch {
         }
-        completed.withValue { $0 += 1 }
+        completed.withLock { $0 += 1 }
       }
-      sleepTask.setValue(task)
+      sleepTask.withLock { $0 = task }
       sleepTasks.append(task)
       await cancellationTask.value
     }
     let timeout = ContinuousClock.now.advanced(by: .seconds(1))
-    while completed.value != attemptCount && ContinuousClock.now < timeout {
+    while completed.withLock(\.self) != attemptCount && ContinuousClock.now < timeout {
       await Task.yield()
     }
 
-    let completedBeforeAdvance = completed.value
+    let completedBeforeAdvance = completed.withLock(\.self)
     await clock.advance(by: .seconds(1))
     for task in sleepTasks {
       await task.value
@@ -210,7 +209,7 @@ struct TestClock2Tests {
   @Test
   @available(anyAppleOS 26.0, *)
   func testAdvanceDoesNotMoveBackward() async throws {
-    let clock = TestClock2()
+    let clock = TestClock()
 
     await clock.advance(by: .seconds(10))
     await clock.advance(to: .init(offset: .seconds(5)))
@@ -225,7 +224,7 @@ struct TestClock2Tests {
   @Test
   @available(anyAppleOS 26.0, *)
   func testNonMainActorRunsThroughNextSuspension() async throws {
-    let clock = TestClock2()
+    let clock = TestClock()
     let dependency: any NonsendingClock<Swift.Duration> = clock
     let worker = Worker()
 
@@ -244,7 +243,7 @@ struct TestClock2Tests {
   @Test
   @available(anyAppleOS 26.0, *)
   func testConcreteClockPreservesIsolation() async throws {
-    let clock = TestClock2()
+    let clock = TestClock()
     let worker = Worker()
 
     let task = Task.immediate {
@@ -262,9 +261,9 @@ struct TestClock2Tests {
   @Test
   @available(anyAppleOS 26.0, *)
   func testNonsendingAnyClockPreservesIsolation() async throws {
-    let clock = TestClock2()
+    let clock = TestClock()
     let dependency: any NonsendingClock<Swift.Duration> = clock
-    let erasedClock = AnyClock(nonsending: dependency)
+    let erasedClock = AnyClock(dependency)
     let worker = Worker()
 
     let task = Task.immediate {
@@ -282,7 +281,7 @@ struct TestClock2Tests {
   @Test
   @available(anyAppleOS 26.0, *)
   func testTimerPreservesIsolation() async throws {
-    let clock = TestClock2()
+    let clock = TestClock()
     let dependency: any NonsendingClock<Swift.Duration> = clock
     let worker = Worker()
 
@@ -301,7 +300,7 @@ struct TestClock2Tests {
   @Test
   @available(anyAppleOS 26.0, *)
   func testManualTimerIterationPreservesIsolation() async throws {
-    let clock = TestClock2()
+    let clock = TestClock()
     let dependency: any NonsendingClock<Swift.Duration> = clock
     let worker = Worker()
 
@@ -320,7 +319,7 @@ struct TestClock2Tests {
   @Test
   @available(anyAppleOS 26.0, *)
   func testReportsIssueForNonisolatedCaller() async throws {
-    let clock = TestClock2()
+    let clock = TestClock()
 
     try await expectReportsIssue {
       let task = Task.immediate {
@@ -337,7 +336,7 @@ struct TestClock2Tests {
   @available(anyAppleOS 26.0, *)
   @concurrent
   nonisolated private static func sleepFromConcurrentContext(
-    clock: TestClock2<Swift.Duration>
+    clock: TestClock<Swift.Duration>
   ) async throws {
     try await clock.sleep(for: .seconds(1))
   }

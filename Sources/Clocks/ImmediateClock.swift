@@ -1,5 +1,4 @@
 #if (canImport(RegexBuilder) || !os(macOS) && !targetEnvironment(macCatalyst))
-  import ConcurrencyExtras
   import Foundation
 
   /// A clock that does not suspend when sleeping.
@@ -108,7 +107,7 @@
   /// }
   /// ```
   @available(iOS 16, macOS 13, tvOS 16, watchOS 9, *)
-  public final class ImmediateClock<Duration>: Clock, @unchecked Sendable
+  public final class ImmediateClock<Duration>: NonsendingClock, Sendable
   where
     Duration: DurationProtocol,
     Duration: Hashable
@@ -133,17 +132,17 @@
       }
     }
 
-    public internal(set) var now: Instant
-    public private(set) var minimumResolution: Duration = .zero
-    let lock = NSLock()
+    let _now: LockIsolated<Instant>
+    public var now: Instant { _now.withLock(\.self) }
+    public var minimumResolution: Duration { .zero }
 
     public init(now: Instant = .init()) {
-      self.now = now
+      _now = LockIsolated(now)
     }
 
     public func sleep(until deadline: Instant, tolerance: Duration?) throws {
       try Task.checkCancellation()
-      self.lock.sync { self.now = deadline }
+      _now.withLock { $0 = deadline }
     }
   }
 
