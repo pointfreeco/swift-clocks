@@ -32,7 +32,6 @@ public final class TestClock<Duration: DurationProtocol & Hashable>: NonsendingC
     self.state = LockIsolated(State(now: now))
   }
 
-  nonisolated(nonsending)
     public func sleep(until deadline: Instant, tolerance: Duration? = nil) async throws
   {
     try await self.sleep(

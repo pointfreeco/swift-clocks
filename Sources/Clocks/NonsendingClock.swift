@@ -18,7 +18,6 @@
       try await sleep(until: deadline, tolerance: tolerance)
     }
 
-    nonisolated(nonsending)
       public func sleep(for duration: Duration, tolerance: Instant.Duration? = nil) async throws
     {
       try await sleep(

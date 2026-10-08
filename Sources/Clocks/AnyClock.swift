@@ -76,7 +76,6 @@
       self._now()
     }
 
-    nonisolated(nonsending)
       public func sleep(until deadline: Instant, tolerance: Duration? = nil) async throws
     {
       try await self.sleep(

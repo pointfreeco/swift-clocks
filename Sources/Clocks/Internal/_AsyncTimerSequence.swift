@@ -42,7 +42,6 @@ public struct _AsyncTimerSequence<C: NonsendingClock>: AsyncSequence {
       }
     }
 
-    nonisolated(nonsending)
       public mutating func next() async -> C.Instant?
     {
       await self.next(isolation: #isolation)
