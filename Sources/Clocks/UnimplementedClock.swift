@@ -88,7 +88,7 @@
     private let line: UInt
     private let column: UInt
 
-    public init<C: Clock>(
+    public init<C: NonsendingClock>(
       _ base: C,
       name: String = "\(C.self)",
       fileID: StaticString = #fileID,

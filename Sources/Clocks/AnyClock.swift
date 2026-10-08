@@ -54,33 +54,19 @@
     private let _now: @Sendable () -> Instant
     private let _sleep: @Sendable (Instant, Duration?, isolated (any Actor)?) async throws -> Void
 
-    public init<C: Clock>(_ clock: C) where C.Instant.Duration == Duration {
+    public init<C: NonsendingClock>(_ clock: C)
+    where C.Instant.Duration == Duration {
       let start = clock.now
       self._now = { Instant(offset: start.duration(to: clock.now)) }
       self._minimumResolution = { clock.minimumResolution }
-      self._sleep = { deadline, tolerance, _ in
+      self._sleep = { deadline, tolerance, isolation in
         try await clock.sleep(
           until: start.advanced(by: deadline.offset),
-          tolerance: tolerance
+          tolerance: tolerance,
+          isolation: isolation
         )
       }
     }
-
-    #if compiler(>=6.2)
-      public init<C: NonsendingClock>(_ clock: C)
-      where C.Instant.Duration == Duration {
-        let start = clock.now
-        self._now = { Instant(offset: start.duration(to: clock.now)) }
-        self._minimumResolution = { clock.minimumResolution }
-        self._sleep = { deadline, tolerance, isolation in
-          try await clock.sleep(
-            until: start.advanced(by: deadline.offset),
-            tolerance: tolerance,
-            isolation: isolation
-          )
-        }
-      }
-    #endif
 
     public var minimumResolution: Duration {
       self._minimumResolution()
