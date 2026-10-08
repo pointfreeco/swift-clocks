@@ -61,8 +61,8 @@ public final class TestClock<Duration: DurationProtocol & Hashable>: NonsendingC
     try await withTaskCancellationHandler {
       try await withCheckedThrowingContinuation { continuation in
         let registration = self.state.withLock { state in
-          guard !Task.isCancelled else { return Registration.cancel }
-          guard deadline >= state.now else { return Registration.resume }
+          guard !Task.isCancelled else { return Registration.cancelled }
+          guard deadline >= state.now else { return Registration.deadlinePassed }
           state.sleeps.append(
             State.Sleep(
               id: id,
@@ -74,9 +74,9 @@ public final class TestClock<Duration: DurationProtocol & Hashable>: NonsendingC
           return Registration.sleep
         }
         switch registration {
-        case .cancel:
+        case .cancelled:
           continuation.resume(throwing: CancellationError())
-        case .resume:
+        case .deadlinePassed:
           continuation.resume()
         case .sleep:
           break
@@ -157,8 +157,8 @@ public final class TestClock<Duration: DurationProtocol & Hashable>: NonsendingC
   }
 
   private enum Registration {
-    case cancel
-    case resume
+    case cancelled
+    case deadlinePassed
     case sleep
   }
 }
