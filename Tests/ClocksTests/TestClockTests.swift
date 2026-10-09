@@ -4,183 +4,196 @@ import Testing
 @testable import Clocks
 
 @MainActor
-@Suite
-struct TestClockTests {
+@Suite struct TestClockTests: ~Copyable {
+  let testClock = TestClock()
+  let sourceLocation: SourceLocation
+  var clock: any NonsendingClock<Duration> { testClock }
+
+  init(sourceLocation: SourceLocation = #_sourceLocation) {
+    self.sourceLocation = sourceLocation
+  }
+  deinit {
+    do {
+      try testClock.checkSleeps()
+    } catch {
+      Issue.record(error, sourceLocation: sourceLocation)
+    }
+  }
+
   @Test
   @available(anyAppleOS 26.0, *)
   func basics() async throws {
-    let clock = TestClock()
-    let dependency: any NonsendingClock<Swift.Duration> = clock
     var count = 0
-    let task = Task.immediate {
-      try await dependency.sleep(for: .seconds(1))
+
+    var taskFinished = false
+    let task = Task.immediate { [clock] in
+      try await clock.sleep(for: .seconds(1))
       count += 1
+      taskFinished = true
     }
 
-    await clock.run()
+    await testClock.run()
     #expect(count == 1)
+    #expect(taskFinished == true)
     try await task.value
   }
 
   @Test
   @available(anyAppleOS 26.0, *)
-  func testExistentialRunsThroughNextSuspension() async throws {
-    let clock = TestClock()
-    let dependency: any NonsendingClock<Swift.Duration> = clock
+  func `sleep for 0 seconds and advance()`() async throws {
     var count = 0
 
-    let task = Task.immediate {
+    var taskFinished = false
+    let task = Task.immediate { [clock] in
+      try await clock.sleep(for: .seconds(0))
+      count += 1
+      taskFinished = true
+    }
+
+    await testClock.advance()
+    #expect(count == 1)
+    #expect(taskFinished == true)
+    try await task.value
+  }
+
+  @Test
+  @available(anyAppleOS 26.0, *)
+  func `many sleeps`() async throws {
+    var count = 0
+
+    var taskFinished = false
+    let task = Task.immediate { [clock] in
       for _ in 1...100_000 {
-        try await dependency.sleep(for: .seconds(1))
+        try await clock.sleep(for: .seconds(1))
         count += 1
       }
+      taskFinished = true
     }
 
-    await clock.advance(by: .seconds(100_000))
-
+    await testClock.advance(by: .seconds(100_000))
     #expect(count == 100_000)
+    #expect(taskFinished == true)
     try await task.value
   }
 
   @Test
   @available(anyAppleOS 26.0, *)
-  func testSleepUntil() async throws {
-    let clock = TestClock()
+  func `sleep until`() async throws {
     var count = 0
 
-    let task = Task.immediate {
-      for _ in 1...10_000 {
-        try await clock.sleep(until: clock.now.advanced(by: .seconds(1)))
+    var taskFinished = false
+    let task = Task.immediate { [testClock] in
+      for _ in 1...100_000 {
+        try await testClock.sleep(until: testClock.now.advanced(by: .seconds(1)))
         count += 1
       }
+      taskFinished = true
     }
 
-    await clock.advance(by: .seconds(10_000))
-
-    #expect(count == 10_000)
+    await testClock.advance(by: .seconds(100_000))
+    #expect(count == 100_000)
+    #expect(taskFinished == true)
     try await task.value
   }
 
-  @Test(arguments: Array(1...100))
+  @Test(arguments: 1...1000)
   @available(anyAppleOS 26.0, *)
-  func testRun(_: Int) async throws {
-    let clock = TestClock()
-    let dependency: any NonsendingClock<Swift.Duration> = clock
+  func run(_: Int) async throws {
     var count = 0
 
-    let task = Task.immediate {
+    var taskFinished = false
+    let task = Task.immediate { [clock] in
       for _ in 1...1_000 {
-        try await dependency.sleep(for: .seconds(1))
+        try await clock.sleep(for: .seconds(1))
         count += 1
       }
+      taskFinished = true
     }
 
-    await clock.run()
-
+    await testClock.run()
     #expect(count == 1_000)
+    #expect(taskFinished == true)
     try await task.value
   }
 
-  @Test(arguments: Array(1...1000))
+  @Test(arguments: 1...1000)
   @available(anyAppleOS 26.0, *)
-  func testTimer(_: Int) async throws {
-    let clock = TestClock()
-    let dependency: any NonsendingClock<Swift.Duration> = clock
-    let timer = dependency.timer(interval: .seconds(1)).prefix(100)
+  func timer(_: Int) async throws {
+    let timer = clock.timer(interval: .seconds(1)).prefix(100)
     var count = 0
 
+    var taskFinished = false
     let task = Task.immediate {
-      for await _ in timer {
-        count += 1
-      }
+      for await _ in timer { count += 1 }
+      taskFinished = true
     }
 
-    await clock.run()  //advance(by: .seconds(10_000))
-
+    await testClock.advance(by: .seconds(100))
     #expect(count == 100)
+    #expect(taskFinished)
     await task.value
   }
 
   @Test
   @available(anyAppleOS 26.0, *)
-  func testCancellationRemovesSleep() async throws {
-    let clock = TestClock()
-    let dependency: any NonsendingClock<Swift.Duration> = clock
+  func `cancellation removes sleep`() async throws {
 
-    let task = Task.immediate {
-      try await dependency.sleep(for: .seconds(1))
+    var count = 0
+    let task = Task.immediate { [clock] in
+      try await clock.sleep(for: .seconds(1))
+      count += 1
     }
     task.cancel()
 
     await #expect(throws: CancellationError.self) {
       try await task.value
     }
-
-    await clock.advance(by: .seconds(1))
+    #expect(count == 0)
+    await testClock.advance(by: .seconds(1))
+    #expect(count == 0)
   }
 
-  @Test
+  @Test(.timeLimit(.minutes(1)))
   @available(anyAppleOS 26.0, *)
-  func testCancellationBeforeSleepRegistration() async throws {
-    enum Outcome: Equatable, Sendable {
-      case finished
-      case timedOut
-    }
+  func `cancellation before sleep does not add sleep`() async throws {
+    var count = 0
 
-    let clock = TestClock()
-    let task = Task.immediate {
+    let task = Task.immediate { [clock] in
       withUnsafeCurrentTask { task in
         task?.cancel()
       }
       try await clock.sleep(for: .seconds(1))
+      count += 1
     }
 
-    let outcome = await withTaskGroup(of: Outcome.self) { group in
-      group.addTask {
-        _ = await task.result
-        return .finished
-      }
-      group.addTask {
-        try? await Task.sleep(for: .seconds(1))
-        return .timedOut
-      }
-      let outcome = await group.next()!
-
-      if outcome == .timedOut {
-        // If the sleep was incorrectly registered after cancellation, resume it so that the task
-        // group can finish and the test does not leak a suspended task.
-        await clock.advance(by: .seconds(1))
-      }
-      group.cancelAll()
-      return outcome
-    }
-
-    #expect(outcome == .finished)
-    await clock.advance(by: .seconds(1))
     await #expect(throws: CancellationError.self) {
       try await task.value
     }
+    #expect(count == 0)
+    await testClock.advance(by: .seconds(1))
+    #expect(count == 0)
   }
 
-  @Test
+  @Test(
+    .timeLimit(.minutes(1)),
+    arguments: 1...1000
+  )
   @available(anyAppleOS 26.0, *)
-  @concurrent
-  func testCancellationRacingWithSleepRegistration() async throws {
-    let clock = TestClock()
+  func `racing sleep and cancellation stress test`(_: Int) async throws {
     let completed = LockIsolated(0)
     let attemptCount = 1_000
     var sleepTasks: [Task<Void, Never>] = []
 
-    for _ in 0..<attemptCount {
+    for _ in 1...attemptCount {
       let started = LockIsolated(false)
       let sleepTask = LockIsolated<Task<Void, Never>?>(nil)
-      let cancellationTask = Task.detached {
-        while !started.withLock(\.self) {
+      let cancellationTask = Task { @concurrent in
+        while !started.withLock(\.self) || sleepTask.withLock({ $0 == nil }) {
           await Task.yield()
         }
         sleepTask.withLock { $0?.cancel() }
       }
-      let task = Task { @MainActor in
+      let task = Task { [clock] in
         started.withLock { $0 = true }
         do {
           try await clock.sleep(for: .seconds(1))
@@ -192,179 +205,190 @@ struct TestClockTests {
       sleepTasks.append(task)
       await cancellationTask.value
     }
-    let timeout = ContinuousClock.now.advanced(by: .seconds(1))
-    while completed.withLock(\.self) != attemptCount && ContinuousClock.now < timeout {
-      await Task.yield()
-    }
-
-    let completedBeforeAdvance = completed.withLock(\.self)
-    await clock.advance(by: .seconds(1))
     for task in sleepTasks {
       await task.value
     }
 
-    #expect(completedBeforeAdvance == attemptCount)
+    #expect(completed.withLock(\.self) == attemptCount)
   }
 
   @Test
   @available(anyAppleOS 26.0, *)
-  func testAdvanceDoesNotMoveBackward() async throws {
-    let clock = TestClock()
+  func `advance cannot move time backwards`() async throws {
 
-    await clock.advance(by: .seconds(10))
-    await clock.advance(to: .init(offset: .seconds(5)))
+    await testClock.advance(by: .seconds(10))
+    let now = TestClock<Duration>.Instant(offset: .seconds(10))
+    #expect(testClock.now == now)
 
-    #expect(clock.now == .init(offset: .seconds(10)))
+    await testClock.advance(to: .init(offset: .seconds(5)))
+    #expect(testClock.now == now)
 
-    await clock.advance(by: .seconds(-5))
-
-    #expect(clock.now == .init(offset: .seconds(10)))
+    await testClock.advance(by: .seconds(-5))
+    #expect(testClock.now == now)
   }
 
   @Test
   @available(anyAppleOS 26.0, *)
-  func testNonMainActorRunsThroughNextSuspension() async throws {
-    let clock = TestClock()
-    let dependency: any NonsendingClock<Swift.Duration> = clock
-    let worker = Worker()
+  func `sleep captures isolation from custom actors`() async throws {
+    let worker = CustomIsolation()
 
-    let task = Task.immediate {
-      try await worker.run(clock: dependency)
+    var taskFinished = false
+    let task = Task.immediate { [clock] in
+      try await worker.sleeps(clock: clock, count: 10_000)
+      taskFinished = true
     }
-    try await Task.sleep(for: .seconds(0.1))
+    await worker.run { _ in }
 
-    await clock.advance(by: .seconds(10_000))
-
+    await testClock.advance(by: .seconds(10_000))
     let count = await worker.count
     #expect(count == 10_000)
+    #expect(taskFinished == true)
     try await task.value
   }
 
   @Test
   @available(anyAppleOS 26.0, *)
-  func testConcreteClockPreservesIsolation() async throws {
-    let clock = TestClock()
-    let worker = Worker()
+  func `AnyClock preserves isolation`() async throws {
+    let erasedClock = AnyClock(clock)
+    let worker = CustomIsolation()
 
+    var taskFinished = false
     let task = Task.immediate {
-      try await worker.run(clock: clock, count: 1_000)
+      try await worker.sleeps(clock: erasedClock, count: 1_000)
+      taskFinished = true
     }
-    try await Task.sleep(for: .seconds(0.1))
+    await worker.run { _ in }
 
-    await clock.advance(by: .seconds(1_000))
-
-    try await task.value
+    await testClock.advance(by: .seconds(1_000))
     let count = await worker.count
     #expect(count == 1_000)
+    #expect(taskFinished == true)
+    try await task.value
   }
 
   @Test
   @available(anyAppleOS 26.0, *)
-  func testNonsendingAnyClockPreservesIsolation() async throws {
-    let clock = TestClock()
-    let dependency: any NonsendingClock<Swift.Duration> = clock
-    let erasedClock = AnyClock(dependency)
-    let worker = Worker()
+  func `timers preserve custom isolation`() async throws {
+    let worker = CustomIsolation()
 
-    let task = Task.immediate {
-      try await worker.run(clock: erasedClock, count: 1_000)
+    var taskFinished = false
+    let task = Task.immediate { [clock] in
+      await worker.timer(clock: clock, count: 1_000)
+      taskFinished = true
     }
-    try await Task.sleep(for: .seconds(0.1))
+    await worker.run { _ in }
 
-    await clock.advance(by: .seconds(1_000))
-
-    try await task.value
+    await testClock.advance(by: .seconds(1_000))
     let count = await worker.count
     #expect(count == 1_000)
-  }
-
-  @Test
-  @available(anyAppleOS 26.0, *)
-  func testTimerPreservesIsolation() async throws {
-    let clock = TestClock()
-    let dependency: any NonsendingClock<Swift.Duration> = clock
-    let worker = Worker()
-
-    let task = Task.immediate {
-      await worker.runTimer(clock: dependency, count: 1_000)
-    }
-    try await Task.sleep(for: .seconds(0.1))
-
-    await clock.advance(by: .seconds(1_000))
-
+    #expect(taskFinished == true)
     await task.value
-    let count = await worker.count
-    #expect(count == 1_000)
   }
 
   @Test
   @available(anyAppleOS 26.0, *)
-  func testManualTimerIterationPreservesIsolation() async throws {
-    let clock = TestClock()
-    let dependency: any NonsendingClock<Swift.Duration> = clock
-    let worker = Worker()
+  func `timer iterator preserves custom isolation`() async throws {
+    let worker = CustomIsolation()
 
-    let task = Task.immediate {
-      await worker.runManualTimer(clock: dependency, count: 1_000)
+    var taskFinished = false
+    let task = Task.immediate { [clock] in
+      await worker.timerIterator(clock: clock, count: 1_000)
+      taskFinished = true
     }
-    try await Task.sleep(for: .seconds(0.1))
+    await worker.run { _ in }
 
-    await clock.advance(by: .seconds(1_000))
-
-    await task.value
+    await testClock.advance(by: .seconds(1_000))
     let count = await worker.count
     #expect(count == 1_000)
+    #expect(taskFinished == true)
+    await task.value
   }
 
   @Test
   @available(anyAppleOS 26.0, *)
-  func testReportsIssueForNonisolatedCaller() async throws {
-    let clock = TestClock()
-
-    try await expectReportsIssue {
-      let task = Task.immediate {
-        try await Self.sleepFromConcurrentContext(clock: clock)
+  func `reports issue when sleeping from nonisolated context`() async throws {
+    expectReportsIssue {
+      _ = Task.immediate { @concurrent [clock] in
+        try await clock.sleep(for: .seconds(1))
       }
-      try await Task.sleep(for: .seconds(0.1))
-      await clock.advance(by: .seconds(1))
-      try await task.value
     } matching: {
       $0.description.contains("nonisolated concurrent context")
     }
   }
 
+  @Test
   @available(anyAppleOS 26.0, *)
-  @concurrent
-  nonisolated private static func sleepFromConcurrentContext(
-    clock: TestClock<Swift.Duration>
-  ) async throws {
-    try await clock.sleep(for: .seconds(1))
+  func `reentrant units of work`() async throws {
+    let task = Task.immediate { [clock] in
+      var count = 0
+      try await clock.sleep(for: .seconds(1))
+      count += 1
+      try await clock.sleep(for: .seconds(1))
+      count += 1
+      try await clock.sleep(for: .seconds(1))
+      count += 1
+      try await clock.sleep(for: .seconds(1))
+      count += 1
+      try await clock.sleep(for: .seconds(1))
+      count += 1
+      return count
+    }
+    await testClock.advance(by: .seconds(5))
+    let count = try await task.value
+    #expect(count == 5)
   }
 
-  private actor Worker {
-    var count = 0
-
-    func run<C: NonsendingClock>(clock: C, count: Int = 10_000) async throws
-    where C.Duration == Swift.Duration {
-      for _ in 1...count {
-        try await clock.sleep(for: .seconds(1))
-        self.count += 1
-      }
+  @Test
+  @available(anyAppleOS 26.0, *)
+  func `check sleeps`() async throws {
+    _ = Task.immediate { [clock] in try await clock.sleep(for: .seconds(0)) }
+    #expect(throws: SuspensionError.self) {
+      try testClock.checkSleeps()
     }
+    await testClock.run()
+  }
 
-    @available(anyAppleOS 26.0, *)
-    func runTimer(clock: any NonsendingClock<Swift.Duration>, count: Int) async {
-      for await _ in clock.timer(interval: .seconds(1)).prefix(count) {
-        self.count += 1
-      }
+
+  @Test
+  @available(anyAppleOS 26.0, *)
+  func `TODO`() async throws {
+    var events: [Int] = []
+    _ = Task.immediate { [clock] in
+      try await clock.sleep(for: .seconds(2))
+      events.append(0)
     }
+    _ = Task.immediate { [clock] in
+      try await clock.sleep(for: .seconds(1))
+      events.append(1)
+    }
+    await testClock.run()
+    #expect(events == [1, 0])
+  }
+}
 
-    func runManualTimer(clock: any NonsendingClock<Swift.Duration>, count: Int) async {
-      var iterator = clock.timer(interval: .seconds(1)).makeAsyncIterator()
-      for _ in 1...count {
-        guard await iterator.next() != nil else { return }
-        self.count += 1
-      }
+// A custom isolation to show that 'TestClock' and timers capture their surrounding isolation.
+private actor CustomIsolation {
+  var count = 0
+
+  func sleeps<C: NonsendingClock<Duration>>(clock: C, count: Int) async throws {
+    for _ in 1...count {
+      try await clock.sleep(for: .seconds(1))
+      self.count += 1
+    }
+  }
+
+  @available(iOS 18.4, macCatalyst 18.4, macOS 15.4, tvOS 18.4, watchOS 11.4, visionOS 2.4, *)
+  func timer(clock: any NonsendingClock<Duration>, count: Int) async {
+    for await _ in clock.timer(interval: .seconds(1)).prefix(count) {
+      self.count += 1
+    }
+  }
+
+  func timerIterator(clock: any NonsendingClock<Duration>, count: Int) async {
+    var iterator = clock.timer(interval: .seconds(1)).makeAsyncIterator()
+    for _ in 1...count {
+      guard await iterator.next() != nil else { return }
+      self.count += 1
     }
   }
 }

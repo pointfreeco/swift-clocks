@@ -1,6 +1,72 @@
 import Foundation
 import IssueReporting
 
+/// A clock whose time can be controlled in a deterministic manner.
+///
+/// This clock is useful for testing how the flow of time affects asynchronous and concurrent code.
+/// This includes any code that makes use of `sleep` or any time-based async operators, such as
+/// timers, `debounce`, `throttle`, `timeout`, and more.
+///
+/// For example, suppose you have a model that encapsulates the behavior of a timer that can be
+/// started and stopped:
+///
+/// ```swift
+/// @MainActor
+/// @Observable
+/// final class FeatureModel {
+///   var count = 0
+///   let clock: any NonsendingClock<Duration>
+///   var timerTask: Task<Void, Error>?
+///
+///   init(clock: any Clock<Duration>) {
+///     self.clock = clock
+///   }
+///   func startTimerButtonTapped() {
+///     timerTask = Task {
+///       while true {
+///         try await self.clock.sleep(for: .seconds(1))
+///         count += 1
+///       }
+///     }
+///   }
+///   func stopTimerButtonTapped() {
+///     timerTask?.cancel()
+///     timerTask = nil
+///   }
+/// }
+/// ```
+///
+/// > Note: In order to allow clocks to be deterministically testable you must use the
+/// > ``NonsendingClock`` protocol instead of the `Clock` protocol.
+///
+/// Here we have explicitly forced a clock to be provided in order to construct the `FeatureModel`.
+/// This makes it possible to use a real life clock, such as `ContinuousClock`, when running on a
+/// device or simulator, and use a more controllable clock in tests, such as the ``TestClock``
+/// or an ``ImmediateClock``.
+///
+/// To write a test for this feature we can construct a `FeatureModel` with a ``TestClock``, then
+/// advance the clock forward and assert on how the model changes:
+///
+/// ```swift
+/// @Test
+/// func timer() async {
+///   let clock = TestClock()
+///   let model = FeatureModel(clock: clock)
+///
+///   #expect(model.count == 0)
+///   model.startTimerButtonTapped()
+///
+///   await clock.advance(by: .seconds(1))
+///   #expect(model.count == 1)
+///
+///   await clock.advance(by: .seconds(4))
+///   #expect(model.count == 5)
+///
+///   model.stopTimerButtonTapped()
+///   await clock.run()
+/// }
+/// ```
+///
 @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
 public final class TestClock<Duration: DurationProtocol & Hashable>: NonsendingClock, Sendable {
   public struct Instant: InstantProtocol {
@@ -32,8 +98,7 @@ public final class TestClock<Duration: DurationProtocol & Hashable>: NonsendingC
     self.state = LockIsolated(State(now: now))
   }
 
-    public func sleep(until deadline: Instant, tolerance: Duration? = nil) async throws
-  {
+  public func sleep(until deadline: Instant, tolerance: Duration? = nil) async throws {
     try await self.sleep(
       until: deadline,
       tolerance: tolerance,
@@ -101,10 +166,16 @@ public final class TestClock<Duration: DurationProtocol & Hashable>: NonsendingC
     try Task.checkCancellation()
   }
 
+  /// Advances the test clock's internal time by the duration.
+  ///
+  /// See the documentation for ``TestClock`` to see how to use this method.
   public func advance(by duration: Duration = .zero) async {
     await self.advance(to: self.now.advanced(by: duration))
   }
 
+  /// Advances the test clock's internal time to the deadline.
+  ///
+  /// See the documentation for ``TestClock`` to see how to use this method.
   public func advance(to deadline: Instant) async {
     while true {
       let sleep: State.Sleep? = self.state.withLock { state in
@@ -143,6 +214,35 @@ public final class TestClock<Duration: DurationProtocol & Hashable>: NonsendingC
     }
   }
 
+  /// Throws an error if there are active sleeps on the clock.
+  ///
+  /// This can be useful for proving that your feature will not perform any more time-based
+  /// asynchrony. For example, the following will throw because the clock has an active suspension
+  /// scheduled:
+  ///
+  /// ```swift
+  /// let clock = TestClock()
+  /// Task {
+  ///   try await clock.sleep(for: .seconds(1))
+  /// }
+  /// try await clock.checkSleeps()
+  /// ```
+  ///
+  /// However, the following will not throw because advancing the clock has finished the suspension:
+  ///
+  /// ```swift
+  /// let clock = TestClock()
+  /// Task {
+  ///   try await clock.sleep(for: .seconds(1))
+  /// }
+  /// await clock.advance(for: .seconds(1))
+  /// try await clock.checkSleeps()
+  /// ```
+  public func checkSleeps() throws {
+    guard state.withLock(\.sleeps.isEmpty)
+    else { throw SuspensionError() }
+  }
+
   private struct State {
     var now: Instant
     var advancementContinuations: [UUID: CheckedContinuation<Void, Never>] = [:]
@@ -170,9 +270,16 @@ extension TestClock where Duration == Swift.Duration {
   }
 }
 
+/// An error that indicates there are actively suspending sleeps scheduled on the clock.
+///
+/// This error is thrown automatically by ``TestClock/checkSleeps()`` if there are actively
+/// suspending sleeps scheduled on the clock.
+public struct SuspensionError: Error {}
+
 extension Actor {
   nonisolated(nonsending)
-  fileprivate func run(operation: (isolated Self) async -> Void) async {
+    package func run(operation: (isolated Self) async -> Void) async
+  {
     await operation(self)
   }
 }
