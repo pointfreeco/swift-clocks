@@ -16,5 +16,5 @@
 
 ### Checking for suspension
 
-- ``checkSuspension()``
+- ``checkSleeps()``
 - ``SuspensionError``
