@@ -1,6 +1,8 @@
 import IssueReporting
 import Testing
 
+import class Foundation.Thread
+
 @testable import Clocks
 
 @MainActor
@@ -340,6 +342,24 @@ import Testing
 
   @Test
   @available(anyAppleOS 26.0, *)
+  func `run reports an issue when it times out`() async throws {
+    let task = Task.immediate { [clock] in
+      try await clock.sleep(for: .seconds(1))
+      _ = { Thread.sleep(forTimeInterval: 1) }()
+    }
+
+    await expectReportsIssue {
+      await testClock.run(timeout: .milliseconds(1))
+    } matching: {
+      $0.description.contains("Expected all sleeps to finish")
+    }
+
+    task.cancel()
+    try? await task.value
+  }
+
+  @Test
+  @available(anyAppleOS 26.0, *)
   func `check sleeps`() async throws {
     _ = Task.immediate { [clock] in try await clock.sleep(for: .seconds(0)) }
     #expect(throws: SuspensionError.self) {
@@ -348,21 +368,18 @@ import Testing
     await testClock.run()
   }
 
-
   @Test
   @available(anyAppleOS 26.0, *)
-  func `TODO`() async throws {
+  func `ordering of sleep deadlines is kept`() async throws {
     var events: [Int] = []
-    _ = Task.immediate { [clock] in
-      try await clock.sleep(for: .seconds(2))
-      events.append(0)
-    }
-    _ = Task.immediate { [clock] in
-      try await clock.sleep(for: .seconds(1))
-      events.append(1)
+    for index in 1...10 {
+      _ = Task.immediate { [clock] in
+        try await clock.sleep(for: .seconds(11 - index))
+        events.append(index)
+      }
     }
     await testClock.run()
-    #expect(events == [1, 0])
+    #expect(events == Array(1...10).reversed())
   }
 }
 

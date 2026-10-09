@@ -1,5 +1,3 @@
-import Foundation
-
 /// A clock that does not suspend when sleeping.
 ///
 /// This clock is useful for squashing all of time down to a single instant, forcing any `sleep`s

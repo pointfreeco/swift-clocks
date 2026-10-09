@@ -1,4 +1,3 @@
-import Foundation
 import IssueReporting
 
 /// A clock whose time can be controlled in a deterministic manner.
@@ -112,7 +111,7 @@ public final class TestClock<Duration: DurationProtocol & Hashable>: NonsendingC
     isolation: isolated (any Actor)?
   ) async throws {
     try Task.checkCancellation()
-    let id = UUID()
+    let id = GUID.next()
     guard let isolation
     else {
       reportIssue(
@@ -204,13 +203,58 @@ public final class TestClock<Duration: DurationProtocol & Hashable>: NonsendingC
     }
   }
 
-  public func run() async {
-    while true {
-      let deadline = self.state.withLock {
+  /// Runs the clock until it has no scheduled sleeps left.
+  ///
+  /// This method is useful for letting a clock run to its end without having to explicitly account
+  /// for each sleep. By default, it suspends until all sleeps finish. It is possible to run a clock
+  /// that never finishes, such as one with an unbounded timer. Pass a timeout to report an issue if
+  /// the timeout duration is reached.
+  ///
+  /// - Parameters:
+  ///   - duration: The optional amount of time to allow for all work on the clock to finish.
+  public func run(
+    timeout duration: Swift.Duration? = nil,
+    file: StaticString = #file,
+    line: UInt = #line
+  ) async {
+    func run() async {
+      while let deadline = self.state.withLock({
         $0.sleeps.min(by: { $0.deadline < $1.deadline })?.deadline
+      }) {
+        await self.advance(to: deadline)
       }
-      guard let deadline else { return }
-      await self.advance(to: deadline)
+    }
+    guard let duration
+    else {
+      await run()
+      return
+    }
+
+    do {
+      try await withThrowingTaskGroup(of: Void.self) { group in
+        group.addTask {
+          try await Task.sleep(for: duration)
+          throw CancellationError()
+        }
+        group.addTask {
+          await run()
+        }
+        try await group.next()
+        group.cancelAll()
+      }
+    } catch {
+      reportIssue(
+        """
+        Expected all sleeps to finish, but some are still suspending after \(duration).
+
+        There are sleeps suspending. This could mean you are not advancing the test clock far enough
+        for your feature to execute its logic, or there could be a bug in your feature's logic.
+
+        You can also increase the timeout of 'run' to be greater than \(duration).
+        """,
+        fileID: file,
+        line: line
+      )
     }
   }
 
@@ -245,11 +289,11 @@ public final class TestClock<Duration: DurationProtocol & Hashable>: NonsendingC
 
   private struct State {
     var now: Instant
-    var advancementContinuations: [UUID: CheckedContinuation<Void, Never>] = [:]
+    var advancementContinuations: [Int: CheckedContinuation<Void, Never>] = [:]
     var sleeps: [Sleep] = []
 
     struct Sleep {
-      let id: UUID
+      let id: Int
       let deadline: Instant
       let isolation: any Actor
       let continuation: CheckedContinuation<Void, any Error>
@@ -281,5 +325,15 @@ extension Actor {
     package func run(operation: (isolated Self) async -> Void) async
   {
     await operation(self)
+  }
+}
+
+private enum GUID {
+  private static let id = LockIsolated(0)
+  static func next() -> Int {
+    id.withLock {
+      $0 += 1
+      return $0
+    }
   }
 }
