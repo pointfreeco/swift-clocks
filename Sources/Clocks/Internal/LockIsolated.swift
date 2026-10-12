@@ -1,19 +1,17 @@
 #if canImport(Foundation)
-  import Foundation
+  import class Foundation.NSLock
 
   package final class LockIsolated<Value>: @unchecked Sendable {
-    private var _value: Value
+    private var value: Value
     private let lock = NSLock()
-    init(_ value: @autoclosure @Sendable () throws -> Value) rethrows {
-      self._value = try value()
+    package init(_ value: sending Value) {
+      self.value = value
     }
-    func withLock<T: Sendable>(
-      _ operation: @Sendable (inout Value) throws -> T
-    ) rethrows -> T {
+    package func withLock<R, F: Error>(
+      _ operation: (inout sending Value) throws(F) -> sending R
+    ) throws(F) -> sending R {
       lock.lock()
       defer { lock.unlock() }
-      var value = _value
-      defer { _value = value }
       return try operation(&value)
     }
   }
