@@ -122,6 +122,7 @@ public final class TestClock<Duration: DurationProtocol & Hashable>: NonsendingC
       )
       return
     }
+
     try await withTaskCancellationHandler {
       try await withCheckedThrowingContinuation { continuation in
         let registration = self.state.withLock { state in
@@ -331,9 +332,7 @@ extension Clock where Self == TestClock<Swift.Duration> {
 public struct SuspensionError: Error {}
 
 extension Actor {
-  nonisolated(nonsending)
-    package func run(operation: (isolated Self) async -> Void) async
-  {
+  package func run(operation: @Sendable (isolated Self) async -> Void) async {
     await operation(self)
   }
 }
