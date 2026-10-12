@@ -314,6 +314,16 @@ extension TestClock where Duration == Swift.Duration {
   }
 }
 
+@available(iOS 16, macOS 13, tvOS 16, watchOS 9, *)
+extension Clock where Self == TestClock<Swift.Duration> {
+  /// A clock whose time can be controlled in a deterministic manner.
+  ///
+  /// Constructs and returns an ``TestClock``.
+  public static var test: Self {
+    TestClock()
+  }
+}
+
 /// An error that indicates there are actively suspending sleeps scheduled on the clock.
 ///
 /// This error is thrown automatically by ``TestClock/checkSleeps()`` if there are actively
