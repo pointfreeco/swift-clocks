@@ -1,5 +1,5 @@
 {
-  "originHash" : "a75f689adb71b2c3056673151bb383c9f2904557d96553d3e047c0a10ee70840",
+  "originHash" : "71574a1beb1be7e6c98b66e7e4f485b99fb818857453a464e70946b2a0fb8d58",
   "pins" : [
     {
       "identity" : "swift-docc-plugin",
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-issue-reporting",
       "state" : {
-        "revision" : "75b000cea2ca6d7527a57e1b9cc0bdf21a9abe9f",
-        "version" : "2.1.1"
+        "branch" : "fix-6.2",
+        "revision" : "cfcdfe5aa9d66c84e1fadee67e1e1a1ceea1607a"
       }
     }
   ],

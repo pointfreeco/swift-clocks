@@ -23,7 +23,7 @@ import class Foundation.Thread
   }
 
   @Test
-  @available(anyAppleOS 26.0, *)
+  @available(iOS 26, macOS 26, tvOS 26, watchOS 26, visionOS 26, *)
   func basics() async throws {
     var count = 0
 
@@ -41,7 +41,7 @@ import class Foundation.Thread
   }
 
   @Test
-  @available(anyAppleOS 26.0, *)
+  @available(iOS 26, macOS 26, tvOS 26, watchOS 26, visionOS 26, *)
   func `sleep for 0 seconds and advance()`() async throws {
     var count = 0
 
@@ -59,7 +59,7 @@ import class Foundation.Thread
   }
 
   @Test
-  @available(anyAppleOS 26.0, *)
+  @available(iOS 26, macOS 26, tvOS 26, watchOS 26, visionOS 26, *)
   func `many sleeps`() async throws {
     var count = 0
 
@@ -79,7 +79,7 @@ import class Foundation.Thread
   }
 
   @Test
-  @available(anyAppleOS 26.0, *)
+  @available(iOS 26, macOS 26, tvOS 26, watchOS 26, visionOS 26, *)
   func `sleep until`() async throws {
     var count = 0
 
@@ -99,7 +99,7 @@ import class Foundation.Thread
   }
 
   @Test(arguments: 1...1000)
-  @available(anyAppleOS 26.0, *)
+  @available(iOS 26, macOS 26, tvOS 26, watchOS 26, visionOS 26, *)
   func run(_: Int) async throws {
     var count = 0
 
@@ -119,7 +119,7 @@ import class Foundation.Thread
   }
 
   @Test(arguments: 1...1000)
-  @available(anyAppleOS 26.0, *)
+  @available(iOS 26, macOS 26, tvOS 26, watchOS 26, visionOS 26, *)
   func timer(_: Int) async throws {
     let timer = clock.timer(interval: .seconds(1)).prefix(100)
     var count = 0
@@ -137,7 +137,7 @@ import class Foundation.Thread
   }
 
   @Test
-  @available(anyAppleOS 26.0, *)
+  @available(iOS 26, macOS 26, tvOS 26, watchOS 26, visionOS 26, *)
   func `cancellation removes sleep`() async throws {
 
     var count = 0
@@ -156,7 +156,7 @@ import class Foundation.Thread
   }
 
   @Test(.timeLimit(.minutes(1)))
-  @available(anyAppleOS 26.0, *)
+  @available(iOS 26, macOS 26, tvOS 26, watchOS 26, visionOS 26, *)
   func `cancellation before sleep does not add sleep`() async throws {
     var count = 0
 
@@ -180,7 +180,7 @@ import class Foundation.Thread
     .timeLimit(.minutes(1)),
     arguments: 1...1000
   )
-  @available(anyAppleOS 26.0, *)
+  @available(iOS 26, macOS 26, tvOS 26, watchOS 26, visionOS 26, *)
   func `racing sleep and cancellation stress test`(_: Int) async throws {
     let completed = LockIsolated(0)
     let attemptCount = 1_000
@@ -215,7 +215,7 @@ import class Foundation.Thread
   }
 
   @Test
-  @available(anyAppleOS 26.0, *)
+  @available(iOS 26, macOS 26, tvOS 26, watchOS 26, visionOS 26, *)
   func `advance cannot move time backwards`() async throws {
 
     await testClock.advance(by: .seconds(10))
@@ -230,7 +230,7 @@ import class Foundation.Thread
   }
 
   @Test
-  @available(anyAppleOS 26.0, *)
+  @available(iOS 26, macOS 26, tvOS 26, watchOS 26, visionOS 26, *)
   func `sleep captures isolation from custom actors`() async throws {
     let worker = CustomIsolation()
 
@@ -249,7 +249,7 @@ import class Foundation.Thread
   }
 
   @Test
-  @available(anyAppleOS 26.0, *)
+  @available(iOS 26, macOS 26, tvOS 26, watchOS 26, visionOS 26, *)
   func `AnyClock preserves isolation`() async throws {
     let erasedClock = AnyClock(clock)
     let worker = CustomIsolation()
@@ -269,7 +269,7 @@ import class Foundation.Thread
   }
 
   @Test
-  @available(anyAppleOS 26.0, *)
+  @available(iOS 26, macOS 26, tvOS 26, watchOS 26, visionOS 26, *)
   func `timers preserve custom isolation`() async throws {
     let worker = CustomIsolation()
 
@@ -288,7 +288,7 @@ import class Foundation.Thread
   }
 
   @Test
-  @available(anyAppleOS 26.0, *)
+  @available(iOS 26, macOS 26, tvOS 26, watchOS 26, visionOS 26, *)
   func `timer iterator preserves custom isolation`() async throws {
     let worker = CustomIsolation()
 
@@ -307,7 +307,7 @@ import class Foundation.Thread
   }
 
   @Test
-  @available(anyAppleOS 26.0, *)
+  @available(iOS 26, macOS 26, tvOS 26, watchOS 26, visionOS 26, *)
   func `reports issue when sleeping from nonisolated context`() async throws {
     expectReportsIssue {
       _ = Task.immediate { @concurrent [clock] in
@@ -319,7 +319,7 @@ import class Foundation.Thread
   }
 
   @Test
-  @available(anyAppleOS 26.0, *)
+  @available(iOS 26, macOS 26, tvOS 26, watchOS 26, visionOS 26, *)
   func `reentrant units of work`() async throws {
     let task = Task.immediate { [clock] in
       var count = 0
@@ -341,7 +341,7 @@ import class Foundation.Thread
   }
 
   @Test
-  @available(anyAppleOS 26.0, *)
+  @available(iOS 26, macOS 26, tvOS 26, watchOS 26, visionOS 26, *)
   func `run reports an issue when it times out`() async throws {
     let task = Task.immediate { [clock] in
       try await clock.sleep(for: .seconds(1))
@@ -359,7 +359,7 @@ import class Foundation.Thread
   }
 
   @Test
-  @available(anyAppleOS 26.0, *)
+  @available(iOS 26, macOS 26, tvOS 26, watchOS 26, visionOS 26, *)
   func `check sleeps`() async throws {
     _ = Task.immediate { [clock] in try await clock.sleep(for: .seconds(0)) }
     #expect(throws: SuspensionError.self) {
@@ -369,7 +369,7 @@ import class Foundation.Thread
   }
 
   @Test
-  @available(anyAppleOS 26.0, *)
+  @available(iOS 26, macOS 26, tvOS 26, watchOS 26, visionOS 26, *)
   func `ordering of sleep deadlines is kept`() async throws {
     var events: [Int] = []
     for index in 1...10 {
