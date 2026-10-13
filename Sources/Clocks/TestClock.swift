@@ -93,8 +93,25 @@ public final class TestClock<Duration: DurationProtocol & Hashable>: NonsendingC
 
   private let state: LockIsolated<State>
 
-  public init(now: Instant = .init()) {
+  public init(
+    now: Instant = .init(),
+    fileID: StaticString = #fileID,
+    filePath: StaticString = #filePath,
+    line: UInt = #line,
+    column: UInt = #column
+  ) {
     self.state = LockIsolated(State(now: now))
+    #if compiler(<6.4)
+      reportIssue(
+        """
+        'TestClock' cannot be deterministically used in Swift <6.4.
+        """,
+        fileID: fileID,
+        filePath: filePath,
+        line: line,
+        column: column
+      )
+    #endif
   }
 
   public func sleep(until deadline: Instant, tolerance: Duration? = nil) async throws {
@@ -116,7 +133,7 @@ public final class TestClock<Duration: DurationProtocol & Hashable>: NonsendingC
     else {
       reportIssue(
         """
-        TestClock cannot deterministically advance a sleep from a nonisolated concurrent \
+        'TestClock' cannot deterministically advance a sleep from a nonisolated concurrent \
         context. Call the clock from actor-isolated code.
         """
       )
@@ -310,8 +327,19 @@ public final class TestClock<Duration: DurationProtocol & Hashable>: NonsendingC
 
 @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
 extension TestClock where Duration == Swift.Duration {
-  public convenience init() {
-    self.init(now: .init())
+  public convenience init(
+    fileID: StaticString = #fileID,
+    filePath: StaticString = #filePath,
+    line: UInt = #line,
+    column: UInt = #column
+  ) {
+    self.init(
+      now: Instant(),
+      fileID: fileID,
+      filePath: filePath,
+      line: line,
+      column: column
+    )
   }
 }
 

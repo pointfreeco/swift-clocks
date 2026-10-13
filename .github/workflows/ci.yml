@@ -44,8 +44,7 @@ jobs:
       matrix:
         config: ["debug", "release"]
         swift:
-          - "6.2"
-          - "6.3"
+          - "6.4"
     container: swift:${{ matrix.swift }}
     steps:
       - uses: actions/checkout@v5
@@ -62,10 +61,10 @@ jobs:
         run: |
           PREFIX=/opt/swift
           set -ex
-          curl -f -o /tmp/swift.tar.gz "https://download.swift.org/swift-6.2-release/ubuntu2204/swift-6.2-RELEASE/swift-6.2-RELEASE-ubuntu22.04.tar.gz"
+          curl -f -o /tmp/swift.tar.gz "https://download.swift.org/swift-6.4.0-release/ubuntu2204/swift-6.4.0-RELEASE/swift-6.4.0-RELEASE-ubuntu22.04.tar.gz"
           sudo mkdir -p $PREFIX; sudo tar -xzf /tmp/swift.tar.gz -C $PREFIX --strip-component 1
-          $PREFIX/usr/bin/swift sdk install https://github.com/swiftwasm/swift/releases/download/swift-wasm-6.2-RELEASE/swift-wasm-6.2-RELEASE-wasm32-unknown-wasip1.artifactbundle.zip --checksum f206a9ff2352f726d88a59d2241b9581264326471265229b7ffd133d2593b92b
+          $PREFIX/usr/bin/swift sdk install https://download.swift.org/swift-6.4.0-release/wasm-sdk/swift-6.4.0-RELEASE/swift-6.4.0-RELEASE_wasm.artifactbundle.tar.gz --checksum f07b7be3c586d92d7a07051fc6d303b87ebea67eadc40640ba59d5a8b79aa86d
           echo "$PREFIX/usr/bin" >> $GITHUB_PATH
 
       - name: Build
-        run: swift build --swift-sdk wasm32-unknown-wasi -Xlinker -z -Xlinker stack-size=$((1024 * 1024))
+        run: swift build --swift-sdk swift-6.4.0-RELEASE_wasm -Xlinker -z -Xlinker stack-size=$((1024 * 1024))
