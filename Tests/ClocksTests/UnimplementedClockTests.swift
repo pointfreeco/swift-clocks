@@ -1,4 +1,4 @@
-#if DEBUG && canImport(Darwin)
+#if IssueReporting && DEBUG && canImport(Darwin)
   import Clocks
   import XCTest
 
