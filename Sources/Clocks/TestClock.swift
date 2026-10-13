@@ -66,7 +66,11 @@ import IssueReporting
 /// }
 /// ```
 ///
-@available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
+#if compiler(>=6.4)
+  @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
+#else
+  @available(*, unavailable, message: "'TestClock' requires Swift 6.4")
+#endif
 public final class TestClock<Duration: DurationProtocol & Hashable>: NonsendingClock, Sendable {
   public struct Instant: InstantProtocol {
     fileprivate let offset: Duration
@@ -116,8 +120,8 @@ public final class TestClock<Duration: DurationProtocol & Hashable>: NonsendingC
     else {
       reportIssue(
         """
-        'TestClock' cannot deterministically advance a sleep from a nonisolated concurrent \
-        context. Call the clock from actor-isolated code.
+        'TestClock' cannot sleep in nonisolated contexts because it cannot be deterministically \
+        tested. Call 'sleep' from actor-isolated code.
         """
       )
       return
@@ -281,7 +285,7 @@ public final class TestClock<Duration: DurationProtocol & Hashable>: NonsendingC
   ///   try await clock.sleep(for: .seconds(1))
   /// }
   /// await clock.advance(for: .seconds(1))
-  /// try await clock.checkSleeps()
+  /// try clock.checkSleeps()
   /// ```
   public func checkSleeps() throws {
     guard state.withLock(\.sleeps.isEmpty)
@@ -308,7 +312,11 @@ public final class TestClock<Duration: DurationProtocol & Hashable>: NonsendingC
   }
 }
 
-@available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
+#if compiler(>=6.4)
+  @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
+#else
+  @available(*, unavailable, message: "'TestClock' requires Swift 6.4")
+#endif
 extension TestClock where Duration == Swift.Duration {
   public convenience init(
     fileID: StaticString = #fileID,
@@ -320,7 +328,11 @@ extension TestClock where Duration == Swift.Duration {
   }
 }
 
-@available(iOS 16, macOS 13, tvOS 16, watchOS 9, *)
+#if compiler(>=6.4)
+  @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
+#else
+  @available(*, unavailable, message: "'TestClock' requires Swift 6.4")
+#endif
 extension Clock where Self == TestClock<Swift.Duration> {
   /// A clock whose time can be controlled in a deterministic manner.
   ///
