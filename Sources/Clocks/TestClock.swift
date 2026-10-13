@@ -93,25 +93,8 @@ public final class TestClock<Duration: DurationProtocol & Hashable>: NonsendingC
 
   private let state: LockIsolated<State>
 
-  public init(
-    now: Instant = .init(),
-    fileID: StaticString = #fileID,
-    filePath: StaticString = #filePath,
-    line: UInt = #line,
-    column: UInt = #column
-  ) {
+  public init(now: Instant = Instant()) {
     self.state = LockIsolated(State(now: now))
-    #if compiler(<6.4)
-      reportIssue(
-        """
-        'TestClock' cannot be deterministically used in Swift <6.4.
-        """,
-        fileID: fileID,
-        filePath: filePath,
-        line: line,
-        column: column
-      )
-    #endif
   }
 
   public func sleep(until deadline: Instant, tolerance: Duration? = nil) async throws {

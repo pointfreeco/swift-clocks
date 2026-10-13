@@ -1,4 +1,3 @@
-#if compiler(>=6.4)
   import IssueReporting
   import Testing
 
@@ -417,4 +416,3 @@
       }
     }
   }
-#endif
