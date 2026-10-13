@@ -133,7 +133,7 @@ where
   public var now: Instant { _now.withLock(\.self) }
   public var minimumResolution: Duration { .zero }
 
-  public init(now: Instant = .init()) {
+  public init(now: Instant = Instant()) {
     _now = LockIsolated(now)
   }
 
@@ -146,7 +146,7 @@ where
 @available(iOS 16, macOS 13, tvOS 16, watchOS 9, *)
 extension ImmediateClock where Duration == Swift.Duration {
   public convenience init() {
-    self.init(now: .init())
+    self.init(now: Instant())
   }
 }
 

@@ -104,7 +104,7 @@ public struct UnimplementedClock<Duration: DurationProtocol & Hashable>: Nonsend
 
   public init(
     name: String = "Clock",
-    now: ImmediateClock<Duration>.Instant = .init(),
+    now: ImmediateClock<Duration>.Instant = ImmediateClock<Duration>.Instant(),
     fileID: StaticString = #fileID,
     filePath: StaticString = #filePath,
     line: UInt = #line,
@@ -165,7 +165,7 @@ extension UnimplementedClock where Duration == Swift.Duration {
   ) {
     self.init(
       name: name,
-      now: .init(),
+      now: ImmediateClock<Duration>.Instant(),
       fileID: fileID,
       filePath: filePath,
       line: line,

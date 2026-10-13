@@ -316,13 +316,7 @@ extension TestClock where Duration == Swift.Duration {
     line: UInt = #line,
     column: UInt = #column
   ) {
-    self.init(
-      now: Instant(),
-      fileID: fileID,
-      filePath: filePath,
-      line: line,
-      column: column
-    )
+    self.init(now: Instant())
   }
 }
 
