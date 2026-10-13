@@ -19,7 +19,7 @@ let package = Package(
   traits: [
     .trait(
       name: "IssueReporting",
-      description: "Surface logical issues as unobtrusive runtime warnings"
+      description: "Surface logical issues as unobtrusive runtime warnings and test failures"
     ),
   ],
   dependencies: [
