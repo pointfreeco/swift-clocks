@@ -7,16 +7,23 @@ import class Foundation.Thread
 
 @MainActor
 @Suite struct TestClockTests: ~Copyable {
-  let testClock = TestClock()
+  let _testClock: Any
   let sourceLocation: SourceLocation
+  @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
+  var testClock: TestClock<Duration> { _testClock as! TestClock<Duration> }
+  @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
   var clock: any NonsendingClock<Duration> { testClock }
 
+  @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
   init(sourceLocation: SourceLocation = #_sourceLocation) {
     self.sourceLocation = sourceLocation
+    _testClock = TestClock()
   }
   deinit {
     do {
-      try testClock.checkSleeps()
+      if #available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *) {
+        try (_testClock as! TestClock<Duration>).checkSleeps()
+      }
     } catch {
       Issue.record(error, sourceLocation: sourceLocation)
     }
@@ -383,7 +390,7 @@ import class Foundation.Thread
   }
 }
 
-// A custom isolation to show that 'TestClock' and timers capture their surrounding isolation.
+@available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
 private actor CustomIsolation {
   var count = 0
 
