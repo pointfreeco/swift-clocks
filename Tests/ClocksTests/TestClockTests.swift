@@ -1,9 +1,12 @@
-import IssueReporting
 import Testing
 
 import class Foundation.Thread
 
 @testable import Clocks
+
+#if IssueReporting
+  import IssueReporting
+#endif
 
 @MainActor
 @Suite struct TestClockTests: ~Copyable {
@@ -313,17 +316,19 @@ import class Foundation.Thread
     await task.value
   }
 
-  @Test
-  @available(iOS 26, macOS 26, tvOS 26, watchOS 26, visionOS 26, *)
-  func `reports issue when sleeping from nonisolated context`() async throws {
-    expectReportsIssue {
-      _ = Task.immediate { @concurrent [clock] in
-        try await clock.sleep(for: .seconds(1))
+  #if IssueReporting
+    @Test
+    @available(iOS 26, macOS 26, tvOS 26, watchOS 26, visionOS 26, *)
+    func `reports issue when sleeping from nonisolated context`() async throws {
+      expectReportsIssue {
+        _ = Task.immediate { @concurrent [clock] in
+          try await clock.sleep(for: .seconds(1))
+        }
+      } matching: {
+        $0.description.contains("'TestClock' cannot sleep in nonisolated contexts")
       }
-    } matching: {
-      $0.description.contains("'TestClock' cannot sleep in nonisolated contexts")
     }
-  }
+  #endif
 
   @Test
   @available(iOS 26, macOS 26, tvOS 26, watchOS 26, visionOS 26, *)
@@ -347,23 +352,25 @@ import class Foundation.Thread
     #expect(count == 5)
   }
 
-  @Test
-  @available(iOS 26, macOS 26, tvOS 26, watchOS 26, visionOS 26, *)
-  func `run reports an issue when it times out`() async throws {
-    let task = Task.immediate { [clock] in
-      try await clock.sleep(for: .seconds(1))
-      _ = { Thread.sleep(forTimeInterval: 1) }()
-    }
+  #if IssueReporting
+    @Test
+    @available(iOS 26, macOS 26, tvOS 26, watchOS 26, visionOS 26, *)
+    func `run reports an issue when it times out`() async throws {
+      let task = Task.immediate { [clock] in
+        try await clock.sleep(for: .seconds(1))
+        _ = { Thread.sleep(forTimeInterval: 1) }()
+      }
 
-    await expectReportsIssue {
-      await testClock.run(timeout: .milliseconds(1))
-    } matching: {
-      $0.description.contains("Expected all sleeps to finish")
-    }
+      await expectReportsIssue {
+        await testClock.run(timeout: .milliseconds(1))
+      } matching: {
+        $0.description.contains("Expected all sleeps to finish")
+      }
 
-    task.cancel()
-    try? await task.value
-  }
+      task.cancel()
+      try? await task.value
+    }
+  #endif
 
   @Test
   @available(iOS 26, macOS 26, tvOS 26, watchOS 26, visionOS 26, *)

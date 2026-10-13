@@ -1,5 +1,3 @@
-import IssueReporting
-
 /// A clock that causes an XCTest failure when any of its endpoints are invoked.
 ///
 /// This test is useful when a clock dependency must be provided to test a feature, but you don't

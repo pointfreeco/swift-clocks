@@ -16,6 +16,12 @@ let package = Package(
       targets: ["Clocks"]
     )
   ],
+  traits: [
+    .trait(
+      name: "IssueReporting",
+      description: "Surface logical issues as unobtrusive runtime warnings"
+    ),
+  ],
   dependencies: [
     .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.0.0"),
     .package(url: "https://github.com/pointfreeco/swift-issue-reporting", branch: "fix-6.2"),
@@ -25,7 +31,11 @@ let package = Package(
       name: "Clocks",
       dependencies: [
         "Clocks2",
-        .product(name: "IssueReporting", package: "swift-issue-reporting"),
+        .product(
+          name: "IssueReporting",
+          package: "swift-issue-reporting",
+          condition: .when(traits: ["IssueReporting"])
+        ),
       ]
     ),
     .testTarget(
