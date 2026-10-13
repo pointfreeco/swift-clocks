@@ -1,12 +1,12 @@
 import Clocks
 import XCTest
 
-@available(iOS 16, macOS 13, tvOS 16, watchOS 9, *)
+@available(iOS 26, macOS 26, tvOS 26, watchOS 26, *)
 final class ImmediateClockTests: XCTestCase {
   func testTimer() async throws {
     let clock = ImmediateClock()
 
-    let tasks = Task {
+    let tasks = Task.immediate {
       var ticks = 0
       while ticks < 10 {
         try await clock.sleep(for: .seconds(1))
@@ -29,14 +29,12 @@ final class ImmediateClockTests: XCTestCase {
 
   func testCooperativeCancellation() async throws {
     let clock = ImmediateClock()
-    let task = Task {
-      try? await Task.sleep(nanoseconds: 1_000_000_000 / 3)
-      try await clock.sleep(for: .seconds(1))
-    }
-    task.cancel()
-
     do {
-      try await task.value
+      try await Task {
+        withUnsafeCurrentTask { $0?.cancel() }
+        try await clock.sleep(for: .seconds(1))
+      }
+      .value
       XCTFail("Task should have thrown an error")
     } catch {}
   }

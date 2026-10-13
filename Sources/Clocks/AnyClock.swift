@@ -90,5 +90,4 @@ public final class AnyClock<Duration: DurationProtocol & Hashable>: NonsendingCl
   ) async throws {
     try await self._sleep(deadline, tolerance, isolation)
   }
-
 }

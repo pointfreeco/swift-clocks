@@ -156,8 +156,21 @@ public struct UnimplementedClock<Duration: DurationProtocol & Hashable>: Nonsend
 
 @available(iOS 16, macOS 13, tvOS 16, watchOS 9, *)
 extension UnimplementedClock where Duration == Swift.Duration {
-  public init(name: String = "Clock") {
-    self.init(name: name, now: .init())
+  public init(
+    name: String = "Clock",
+    fileID: StaticString = #fileID,
+    filePath: StaticString = #filePath,
+    line: UInt = #line,
+    column: UInt = #column
+  ) {
+    self.init(
+      name: name,
+      now: .init(),
+      fileID: fileID,
+      filePath: filePath,
+      line: line,
+      column: column
+    )
   }
 }
 
@@ -172,6 +185,11 @@ extension Clock where Self == UnimplementedClock<Swift.Duration> {
     line: UInt = #line,
     column: UInt = #column
   ) -> Self {
-    UnimplementedClock(fileID: fileID, filePath: filePath, line: line, column: column)
+    UnimplementedClock(
+      fileID: fileID,
+      filePath: filePath,
+      line: line,
+      column: column
+    )
   }
 }

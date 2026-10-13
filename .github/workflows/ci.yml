@@ -19,8 +19,8 @@ jobs:
     strategy:
       matrix:
         xcode:
-          - "26.2"
-          - "26.5"
+          - "27.0"
+          - "27.1"
     steps:
       - uses: actions/checkout@v5
       - name: Select Xcode ${{ matrix.xcode }}
@@ -28,7 +28,6 @@ jobs:
       - name: Print Swift version
         run: swift --version
       - name: Install Simulator Runtimes
-        if: matrix.xcode != '26.2'
         uses: nick-fields/retry@v3
         with:
           timeout_minutes: 15
