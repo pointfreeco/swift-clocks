@@ -33,8 +33,8 @@ jobs:
           timeout_minutes: 15
           max_attempts: 3
           command: xcodebuild -downloadAllPlatforms
-      - name: Run ${{ matrix.config }} tests
-        run: CONFIG=${{ matrix.config }} make test-all
+      - name: Run tests
+        run: make test-all
 
   linux:
     name: Linux
@@ -42,13 +42,18 @@ jobs:
     strategy:
       matrix:
         config: ["debug", "release"]
+        traits:
+          - name: disabled
+            flags: --disable-default-traits
+          - name: IssueReporting
+            flags: --traits IssueReporting
         swift:
           - "6.4"
     container: swift:${{ matrix.swift }}
     steps:
       - uses: actions/checkout@v5
-      - name: Run tests
-        run: swift test -c ${{ matrix.config }}
+      - name: "Run tests, traits: ${{ matrix.traits.name }}"
+        run: swift test -c ${{ matrix.config }} ${{ matrix.traits.flags }}
 
   wasm:
     name: Wasm
