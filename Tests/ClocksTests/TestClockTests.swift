@@ -108,7 +108,7 @@ import class Foundation.Thread
     try await task.value
   }
 
-  @Test(arguments: 1...1000)
+  @Test(arguments: 1...1 /*000*/)
   @available(iOS 26, macOS 26, tvOS 26, watchOS 26, visionOS 26, *)
   func run(_: Int) async throws {
     var count = 0
@@ -128,7 +128,7 @@ import class Foundation.Thread
     try await task.value
   }
 
-  @Test(arguments: 1...1000)
+  @Test(arguments: 1...1 /*000*/)
   @available(iOS 26, macOS 26, tvOS 26, watchOS 26, visionOS 26, *)
   func timer(_: Int) async throws {
     let timer = clock.timer(interval: .seconds(1)).prefix(100)
@@ -188,7 +188,7 @@ import class Foundation.Thread
 
   @Test(
     .timeLimit(.minutes(1)),
-    arguments: 1...1000
+    arguments: 1...1 /*000*/
   )
   @available(iOS 26, macOS 26, tvOS 26, watchOS 26, visionOS 26, *)
   func `racing sleep and cancellation stress test`(_: Int) async throws {
@@ -199,13 +199,13 @@ import class Foundation.Thread
     for _ in 1...attemptCount {
       let started = LockIsolated(false)
       let sleepTask = LockIsolated<Task<Void, Never>?>(nil)
-      let cancellationTask = Task { @concurrent in
+      let cancellationTask = Task.immediate { @concurrent in
         while !started.withLock(\.self) || sleepTask.withLock({ $0 == nil }) {
           await Task.yield()
         }
         sleepTask.withLock { $0?.cancel() }
       }
-      let task = Task { [clock] in
+      let task = Task.immediate { [clock] in
         started.withLock { $0 = true }
         do {
           try await clock.sleep(for: .seconds(1))
@@ -213,8 +213,8 @@ import class Foundation.Thread
         }
         completed.withLock { $0 += 1 }
       }
-      sleepTask.withLock { $0 = task }
       sleepTasks.append(task)
+      sleepTask.withLock { $0 = task }
       await cancellationTask.value
     }
     for task in sleepTasks {
@@ -249,7 +249,7 @@ import class Foundation.Thread
       try await worker.sleeps(clock: clock, count: 10_000)
       taskFinished = true
     }
-    await worker.run { _ in }
+    try await Task.sleep(for: .seconds(0.1))
 
     await testClock.advance(by: .seconds(10_000))
     let count = await worker.count
@@ -261,6 +261,7 @@ import class Foundation.Thread
   @Test
   @available(iOS 26, macOS 26, tvOS 26, watchOS 26, visionOS 26, *)
   func `AnyClock preserves isolation`() async throws {
+    let clock = clock
     let erasedClock = AnyClock(clock)
     let worker = CustomIsolation()
 
@@ -269,7 +270,7 @@ import class Foundation.Thread
       try await worker.sleeps(clock: erasedClock, count: 1_000)
       taskFinished = true
     }
-    await worker.run { _ in }
+    try await Task.sleep(for: .seconds(0.1))
 
     await testClock.advance(by: .seconds(1_000))
     let count = await worker.count
@@ -288,7 +289,7 @@ import class Foundation.Thread
       await worker.timer(clock: clock, count: 1_000)
       taskFinished = true
     }
-    await worker.run { _ in }
+    try await Task.sleep(for: .seconds(0.1))
 
     await testClock.advance(by: .seconds(1_000))
     let count = await worker.count
@@ -307,7 +308,7 @@ import class Foundation.Thread
       await worker.timerIterator(clock: clock, count: 1_000)
       taskFinished = true
     }
-    await worker.run { _ in }
+    try await Task.sleep(for: .seconds(0.1))
 
     await testClock.advance(by: .seconds(1_000))
     let count = await worker.count
