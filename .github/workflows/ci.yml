@@ -15,12 +15,12 @@ concurrency:
 
 jobs:
   macos-26:
-    runs-on: macos-26
+    runs-on: xcode-27
     strategy:
       matrix:
         xcode:
-          - "26.2"
-          - "26.5"
+          - "27.0"
+          - "27.1"
     steps:
       - uses: actions/checkout@v5
       - name: Select Xcode ${{ matrix.xcode }}
@@ -28,7 +28,6 @@ jobs:
       - name: Print Swift version
         run: swift --version
       - name: Install Simulator Runtimes
-        if: matrix.xcode != '26.2'
         uses: nick-fields/retry@v3
         with:
           timeout_minutes: 15
@@ -44,8 +43,7 @@ jobs:
       matrix:
         config: ["debug", "release"]
         swift:
-          - "6.0"
-          - "6.3"
+          - "6.4"
     container: swift:${{ matrix.swift }}
     steps:
       - uses: actions/checkout@v5
@@ -62,10 +60,10 @@ jobs:
         run: |
           PREFIX=/opt/swift
           set -ex
-          curl -f -o /tmp/swift.tar.gz "https://download.swift.org/swift-6.0.2-release/ubuntu2204/swift-6.0.2-RELEASE/swift-6.0.2-RELEASE-ubuntu22.04.tar.gz"
+          curl -f -o /tmp/swift.tar.gz "https://download.swift.org/swift-6.4.0-release/ubuntu2204/swift-6.4.0-RELEASE/swift-6.4.0-RELEASE-ubuntu22.04.tar.gz"
           sudo mkdir -p $PREFIX; sudo tar -xzf /tmp/swift.tar.gz -C $PREFIX --strip-component 1
-          $PREFIX/usr/bin/swift sdk install https://github.com/swiftwasm/swift/releases/download/swift-wasm-6.0.2-RELEASE/swift-wasm-6.0.2-RELEASE-wasm32-unknown-wasi.artifactbundle.zip --checksum 6ffedb055cb9956395d9f435d03d53ebe9f6a8d45106b979d1b7f53358e1dcb4
+          $PREFIX/usr/bin/swift sdk install https://download.swift.org/swift-6.4.0-release/wasm-sdk/swift-6.4.0-RELEASE/swift-6.4.0-RELEASE_wasm.artifactbundle.tar.gz --checksum f07b7be3c586d92d7a07051fc6d303b87ebea67eadc40640ba59d5a8b79aa86d
           echo "$PREFIX/usr/bin" >> $GITHUB_PATH
 
       - name: Build
-        run: swift build --swift-sdk wasm32-unknown-wasi -Xlinker -z -Xlinker stack-size=$((1024 * 1024))
+        run: swift build --swift-sdk swift-6.4.0-RELEASE_wasm -Xlinker -z -Xlinker stack-size=$((1024 * 1024))
