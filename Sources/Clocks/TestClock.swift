@@ -1,5 +1,3 @@
-import IssueReporting
-
 /// A clock whose time can be controlled in a deterministic manner.
 ///
 /// This clock is useful for testing how the flow of time affects asynchronous and concurrent code.
