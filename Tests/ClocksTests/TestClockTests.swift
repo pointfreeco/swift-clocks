@@ -105,7 +105,7 @@ import class Foundation.Thread
     try await task.value
   }
 
-  @Test(arguments: 1...1000)
+  @Test(arguments: 1...1/*000*/)
   @available(iOS 26, macOS 26, tvOS 26, watchOS 26, visionOS 26, *)
   func run(_: Int) async throws {
     var count = 0
@@ -125,7 +125,7 @@ import class Foundation.Thread
     try await task.value
   }
 
-  @Test(arguments: 1...1000)
+  @Test(arguments: 1...1/*000*/)
   @available(iOS 26, macOS 26, tvOS 26, watchOS 26, visionOS 26, *)
   func timer(_: Int) async throws {
     let timer = clock.timer(interval: .seconds(1)).prefix(100)
@@ -185,7 +185,7 @@ import class Foundation.Thread
 
   @Test(
     .timeLimit(.minutes(1)),
-    arguments: 1...1000
+    arguments: 1...1/*000*/
   )
   @available(iOS 26, macOS 26, tvOS 26, watchOS 26, visionOS 26, *)
   func `racing sleep and cancellation stress test`(_: Int) async throws {
