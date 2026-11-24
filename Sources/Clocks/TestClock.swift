@@ -102,20 +102,9 @@ public final class TestClock<Duration: DurationProtocol & Hashable>: NonsendingC
   }
 
   public func sleep(until deadline: Instant, tolerance: Duration? = nil) async throws {
-    try await self.sleep(
-      until: deadline,
-      tolerance: tolerance,
-      isolation: #isolation
-    )
-  }
-
-  public func sleep(
-    until deadline: Instant,
-    tolerance: Duration? = nil,
-    isolation: isolated (any Actor)?
-  ) async throws {
     try Task.checkCancellation()
     let id = GUID.next()
+    let isolation: (any Actor)? = #isolation
     guard let isolation
     else {
       reportIssue(
@@ -349,8 +338,8 @@ extension Clock where Self == TestClock<Swift.Duration> {
 public struct SuspensionError: Error {}
 
 extension Actor {
-  package func run(operation: @Sendable (isolated Self) async -> Void) async {
-    await operation(self)
+  package func run<Failure>(operation: @Sendable (isolated Self) async throws(Failure) -> Void) async throws(Failure) {
+    try await operation(self)
   }
 }
 
