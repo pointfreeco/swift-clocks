@@ -51,7 +51,7 @@ public final class AnyClock<Duration: DurationProtocol & Hashable>: NonsendingCl
 
   private let _minimumResolution: @Sendable () -> Duration
   private let _now: @Sendable () -> Instant
-  private let _sleep: nonisolated(nonsending) @Sendable (Instant, Duration?) async throws -> Void
+  private let _sleep: @Sendable (Instant, Duration?) async throws -> Void
 
   public init<C: NonsendingClock>(_ clock: C)
   where C.Instant.Duration == Duration {
