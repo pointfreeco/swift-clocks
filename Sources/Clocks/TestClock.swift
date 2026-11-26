@@ -116,7 +116,7 @@ public final class TestClock<Duration: DurationProtocol & Hashable>: NonsendingC
       return
     }
 
-    try await withTaskCancellationHandler {
+    let acknowledgement = try await withTaskCancellationHandler {
       try await withCheckedThrowingContinuation { continuation in
         let registration = self.state.withLock { state in
           guard !Task.isCancelled else { return Registration.cancelled }
@@ -135,7 +135,7 @@ public final class TestClock<Duration: DurationProtocol & Hashable>: NonsendingC
         case .cancelled:
           continuation.resume(throwing: CancellationError())
         case .deadlinePassed:
-          continuation.resume()
+          continuation.resume(returning: nil)
         case .sleep:
           break
         }
@@ -150,12 +150,7 @@ public final class TestClock<Duration: DurationProtocol & Hashable>: NonsendingC
       }
       sleep?.continuation.resume(throwing: CancellationError())
     }
-    defer {
-      let continuation = self.state.withLock {
-        $0.advancementContinuations.removeValue(forKey: id)
-      }
-      continuation?.resume()
-    }
+    defer { acknowledgement?.continuation.resume() }
     try Task.checkCancellation()
   }
 
@@ -188,10 +183,7 @@ public final class TestClock<Duration: DurationProtocol & Hashable>: NonsendingC
       guard let sleep else { return }
       await sleep.isolation.run { isolation in
         await withCheckedContinuation { continuation in
-          self.state.withLock {
-            $0.advancementContinuations[sleep.id] = continuation
-          }
-          sleep.continuation.resume()
+          sleep.continuation.resume(returning: Acknowledgement(continuation: continuation))
         }
       }
     }
@@ -283,15 +275,18 @@ public final class TestClock<Duration: DurationProtocol & Hashable>: NonsendingC
 
   private struct State {
     var now: Instant
-    var advancementContinuations: [Int: CheckedContinuation<Void, Never>] = [:]
     var sleeps: [Sleep] = []
 
     struct Sleep {
       let id: Int
       let deadline: Instant
       let isolation: any Actor
-      let continuation: CheckedContinuation<Void, any Error>
+      let continuation: CheckedContinuation<Acknowledgement?, any Error>
     }
+  }
+
+  private struct Acknowledgement {
+    let continuation: CheckedContinuation<Void, Never>
   }
 
   private enum Registration {
