@@ -102,20 +102,9 @@ public final class TestClock<Duration: DurationProtocol & Hashable>: NonsendingC
   }
 
   public func sleep(until deadline: Instant, tolerance: Duration? = nil) async throws {
-    try await self.sleep(
-      until: deadline,
-      tolerance: tolerance,
-      isolation: #isolation
-    )
-  }
-
-  public func sleep(
-    until deadline: Instant,
-    tolerance: Duration? = nil,
-    isolation: isolated (any Actor)?
-  ) async throws {
     try Task.checkCancellation()
     let id = GUID.next()
+    let isolation: (any Actor)? = #isolation
     guard let isolation
     else {
       reportIssue(
@@ -127,7 +116,7 @@ public final class TestClock<Duration: DurationProtocol & Hashable>: NonsendingC
       return
     }
 
-    try await withTaskCancellationHandler {
+    let acknowledgement = try await withTaskCancellationHandler {
       try await withCheckedThrowingContinuation { continuation in
         let registration = self.state.withLock { state in
           guard !Task.isCancelled else { return Registration.cancelled }
@@ -146,7 +135,7 @@ public final class TestClock<Duration: DurationProtocol & Hashable>: NonsendingC
         case .cancelled:
           continuation.resume(throwing: CancellationError())
         case .deadlinePassed:
-          continuation.resume()
+          continuation.resume(returning: nil)
         case .sleep:
           break
         }
@@ -161,12 +150,7 @@ public final class TestClock<Duration: DurationProtocol & Hashable>: NonsendingC
       }
       sleep?.continuation.resume(throwing: CancellationError())
     }
-    defer {
-      let continuation = self.state.withLock {
-        $0.advancementContinuations.removeValue(forKey: id)
-      }
-      continuation?.resume()
-    }
+    defer { acknowledgement?.continuation.resume() }
     try Task.checkCancellation()
   }
 
@@ -199,10 +183,7 @@ public final class TestClock<Duration: DurationProtocol & Hashable>: NonsendingC
       guard let sleep else { return }
       await sleep.isolation.run { isolation in
         await withCheckedContinuation { continuation in
-          self.state.withLock {
-            $0.advancementContinuations[sleep.id] = continuation
-          }
-          sleep.continuation.resume()
+          sleep.continuation.resume(returning: Acknowledgement(continuation: continuation))
         }
       }
     }
@@ -294,15 +275,18 @@ public final class TestClock<Duration: DurationProtocol & Hashable>: NonsendingC
 
   private struct State {
     var now: Instant
-    var advancementContinuations: [Int: CheckedContinuation<Void, Never>] = [:]
     var sleeps: [Sleep] = []
 
     struct Sleep {
       let id: Int
       let deadline: Instant
       let isolation: any Actor
-      let continuation: CheckedContinuation<Void, any Error>
+      let continuation: CheckedContinuation<Acknowledgement?, any Error>
     }
+  }
+
+  private struct Acknowledgement {
+    let continuation: CheckedContinuation<Void, Never>
   }
 
   private enum Registration {
@@ -349,8 +333,8 @@ extension Clock where Self == TestClock<Swift.Duration> {
 public struct SuspensionError: Error {}
 
 extension Actor {
-  package func run(operation: @Sendable (isolated Self) async -> Void) async {
-    await operation(self)
+  package func run<Failure>(operation: @Sendable (isolated Self) async throws(Failure) -> Void) async throws(Failure) {
+    try await operation(self)
   }
 }
 

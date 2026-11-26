@@ -55,11 +55,7 @@ public struct _AsyncTimerSequence<C: NonsendingClock>: AsyncSequence {
       }
       let next = nextDeadline(clock)
       do {
-        try await clock.sleep(
-          until: next,
-          tolerance: tolerance,
-          isolation: isolation
-        )
+        try await clock.sleep(until: next, tolerance: tolerance)
       } catch {
         self.clock = nil
         return nil
